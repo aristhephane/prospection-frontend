@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Table, Button, Alert, Card } from 'react-bootstrap';
+import { Container, Table, Alert, Card } from 'react-bootstrap';
 import fileService from '../../services/fileService';
 
 const FileList = () => {
@@ -74,8 +74,8 @@ const FileList = () => {
                     <td>{formatDate(file.dateCreation)}</td>
                     <td>
                       <span className={`badge ${file.statut === 'nouveau' ? 'bg-primary' :
-                          file.statut === 'en_cours' ? 'bg-info' :
-                            file.statut === 'termine' ? 'bg-success' : 'bg-secondary'
+                        file.statut === 'en_cours' ? 'bg-info' :
+                          file.statut === 'termine' ? 'bg-success' : 'bg-secondary'
                         }`}>
                         {file.statut}
                       </span>

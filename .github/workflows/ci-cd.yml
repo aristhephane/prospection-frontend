@@ -73,4 +73,4 @@ jobs:
         script: |
           sudo chown -R apache:apache /var/www/html/prospection-frontend/build
           sudo chmod -R 755 /var/www/html/prospection-frontend/build
-          sudo systemctl restart httpd 
+          sudo systemctl restart httpd

@@ -62,5 +62,8 @@ axios.interceptors.response.use(
   }
 );
 
-// Export un objet vide pour permettre l'import dans index.js
-export default {};
+// Créer une instance d'axios configurée
+const axiosInstance = axios;
+
+// Export l'instance configurée
+export default axiosInstance;

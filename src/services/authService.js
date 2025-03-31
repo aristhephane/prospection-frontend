@@ -23,10 +23,15 @@ const authService = {
     try {
       console.log('Tentative de connexion avec:', credentials);
 
-      // Correction du chemin pour correspondre au check_path du json_login dans security.yaml
+      // S'assurer que la requête est bien identifiée comme une requête JSON
       const response = await authAxios.post(`/login_check`, {
         username: credentials.email,
         password: credentials.password
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
       });
       console.log('Réponse du serveur:', response);
 

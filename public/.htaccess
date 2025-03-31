@@ -1,0 +1,20 @@
+# Activer le module de réécriture
+RewriteEngine On
+
+# Rediriger toutes les requêtes HTTP vers HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Ne pas rediriger les requêtes API
+RewriteCond %{REQUEST_URI} !^/api/
+# Ne pas rediriger les fichiers et dossiers existants
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# Rediriger toutes les autres requêtes vers index.html
+RewriteRule ^ index.html [L]
+
+# Autoriser les requêtes CORS
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+Header set Access-Control-Expose-Headers "Authorization" 

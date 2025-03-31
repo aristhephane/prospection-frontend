@@ -1,0 +1,9 @@
+// This file should be removed or renamed to webpack.config.js.bak
+// Create React App doesn't use custom webpack configuration files directly
+module.exports = {
+  devServer: {
+    allowedHosts: ['upjv-prospection-vps.amourfoot.fr'],
+    host: 'upjv-prospection-vps.amourfoot.fr',
+    port: 3000
+  }
+};

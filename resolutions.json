@@ -1,0 +1,6 @@
+{
+  "resolutions": {
+    "//": "Add manual resolutions for problematic dependencies here",
+    "example-package": "2.0.1"
+  }
+}

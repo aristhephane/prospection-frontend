@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-// URL de l'API - Correction des URL pour éviter la double référence à /api
-const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://upjv-prospection-vps.amourfoot.fr/api'
-  : '/api';
+// URL de l'API - Utilisation de la variable d'environnement
+const API_URL = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'user_data';
@@ -24,7 +22,7 @@ const authService = {
       console.log('Tentative de connexion avec:', credentials);
 
       // S'assurer que la requête est bien identifiée comme une requête JSON
-      const response = await authAxios.post(`/login_check`, {
+      const response = await authAxios.post(`/api/login_check`, {
         username: credentials.email,
         password: credentials.password
       }, {
@@ -67,8 +65,8 @@ const authService = {
       // Essayer de révoquer le token sur le serveur
       const token = localStorage.getItem(TOKEN_KEY);
       if (token) {
-        // Correction du chemin sans doublon de /api
-        await authAxios.post('/logout', {}, {
+        // Ajouter le préfixe /api au chemin
+        await authAxios.post('/api/logout', {}, {
           headers: { 'Authorization': `Bearer ${token}` }
         }).catch(() => {
           // Ignorer les erreurs lors du logout côté serveur
@@ -93,8 +91,8 @@ const authService = {
     }
 
     try {
-      // Correction du chemin sans doublon de /api
-      const response = await authAxios.post('/token/refresh', {
+      // Ajouter le préfixe /api au chemin
+      const response = await authAxios.post('/api/token/refresh', {
         refresh_token: refreshToken
       });
 
@@ -125,8 +123,8 @@ const authService = {
       }
 
       // Configurer le token pour cette requête spécifique
-      // Correction du chemin sans doublon de /api
-      const response = await authAxios.get(`/auth-status`, {
+      // Ajouter le préfixe /api au chemin
+      const response = await authAxios.get(`/api/auth-status`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -241,8 +239,8 @@ const authService = {
   // Test de connexion API
   testApiConnection: async () => {
     try {
-      // Correction du chemin sans doublon de /api
-      const response = await authAxios.get('/auth-test');
+      // Ajouter le préfixe /api au chemin
+      const response = await authAxios.get('/api/auth-test');
       return {
         success: true,
         status: response.status,

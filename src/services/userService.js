@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 // Définir l'URL de base pour l'API
-const API_URL = window.location.protocol + '//' + window.location.hostname + '/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
 
 const getUsers = () => {
-  return axios.get('/api/utilisateurs');
+  return axios.get(`${API_URL}/api/utilisateurs`);
 };
 
 const getUserById = (id) => {

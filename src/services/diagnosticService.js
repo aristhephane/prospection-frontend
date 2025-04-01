@@ -1,8 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://upjv-prospection-vps.amourfoot.fr/api'
-  : '/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
 
 const diagnosticService = {
   testConnection: async () => {

@@ -4,9 +4,9 @@ module.exports = function (app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://upjv-prospection-vps.amourfoot.fr',
+      target: 'https://api.upjv-prospection-vps.amourfoot.fr',
       changeOrigin: true,
-      secure: false,
+      secure: true,
       onProxyReq: function (proxyReq, req, res) {
         // Log de la requête
         console.log('Requête proxy:', {

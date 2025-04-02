@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Configuration globale d'Axios
 axios.defaults.timeout = 10000; // Timeout réduit à 10 secondes
-axios.defaults.baseURL = 'http://api.upjv-prospection-vps.amourfoot.fr';
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'https://upjv-prospection-vps.amourfoot.fr/api';
 axios.defaults.withCredentials = true;
 
 // Configuration pour les préfixes API

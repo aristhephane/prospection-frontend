@@ -1,23 +1,44 @@
 import React from 'react';
+import { Typography, Box, Button } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { useAuth } from '../contexts/AuthContext';
 
 const NotFound = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.typeInterface === 'administrateur';
+  const homePath = isAdmin ? '/admin/dashboard' : '/dashboard';
+
   return (
-    <Container className="text-center py-5">
-      <Row className="justify-content-center">
-        <Col md={8} lg={6}>
-          <h1 className="display-1 text-muted">404</h1>
-          <h2 className="mb-4">Page non trouvée</h2>
-          <p className="lead mb-5">
-            La page que vous recherchez n'existe pas ou a été déplacée.
-          </p>
-          <Button as={Link} to="/dashboard" variant="primary" size="lg">
-            Retour au tableau de bord
-          </Button>
-        </Col>
-      </Row>
-    </Container>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '70vh',
+        textAlign: 'center',
+        p: 3,
+      }}
+    >
+      <Typography variant="h1" component="h1" gutterBottom>
+        404
+      </Typography>
+      <Typography variant="h4" component="h2" gutterBottom>
+        Page non trouvée
+      </Typography>
+      <Typography variant="body1" sx={{ mb: 4 }}>
+        La page que vous recherchez n'existe pas ou a été déplacée.
+      </Typography>
+      <Button
+        component={Link}
+        to={homePath}
+        variant="contained"
+        color="primary"
+        size="large"
+      >
+        Retour à l'accueil
+      </Button>
+    </Box>
   );
 };
 

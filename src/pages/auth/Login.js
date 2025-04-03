@@ -131,6 +131,7 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           disabled={isSubmitting}
           sx={{ mb: 2 }}
+          inputProps={{ 'data-testid': 'email-input' }}
         />
         <TextField
           margin="normal"
@@ -145,6 +146,7 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           disabled={isSubmitting}
           sx={{ mb: 3 }}
+          inputProps={{ 'data-testid': 'password-input' }}
         />
         <Button
           type="submit"

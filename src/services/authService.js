@@ -1,10 +1,14 @@
 import axios from 'axios';
 
-// URL de l'API - Utilisation de la variable d'environnement
-const API_URL = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
-const TOKEN_KEY = 'auth_token';
+// URL de l'API - Utilisation des variables d'environnement
+const API_URL = process.env.REACT_APP_API_URL || 'https://upjv-prospection-vps.amourfoot.fr/api';
+const AUTH_URL = process.env.REACT_APP_AUTH_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/login_check';
+const REFRESH_URL = process.env.REACT_APP_REFRESH_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/token/refresh';
+const AUTH_STATUS_URL = process.env.REACT_APP_AUTH_STATUS_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/auth-status';
+
+const TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
-const USER_KEY = 'user_data';
+const USER_KEY = 'user';
 
 // Création d'une instance axios dédiée pour l'authentification
 const authAxios = axios.create({
@@ -21,9 +25,9 @@ const authService = {
     try {
       console.log('Tentative de connexion avec:', credentials);
 
-      // S'assurer que la requête est bien identifiée comme une requête JSON
-      const response = await authAxios.post(`/api/login_check`, {
-        username: credentials.email,
+      // Utiliser directement l'URL d'authentification complète
+      const response = await axios.post(AUTH_URL, {
+        email: credentials.email,
         password: credentials.password
       }, {
         headers: {
@@ -36,6 +40,11 @@ const authService = {
       if (response.data && response.data.token) {
         // Stocker le token
         localStorage.setItem(TOKEN_KEY, response.data.token);
+
+        // Stocker le refresh token s'il est présent
+        if (response.data.refresh_token) {
+          localStorage.setItem(REFRESH_TOKEN_KEY, response.data.refresh_token);
+        }
 
         // Stocker les informations utilisateur
         if (response.data.user) {
@@ -54,7 +63,7 @@ const authService = {
       }
       if (error.response) {
         console.error('Détails de la réponse:', error.response.data);
-        throw new Error(error.response.data.message || 'Erreur d\'authentification');
+        throw new Error(error.response.data.message || error.response.data.error || 'Erreur d\'authentification');
       }
       throw error;
     }
@@ -66,7 +75,7 @@ const authService = {
       const token = localStorage.getItem(TOKEN_KEY);
       if (token) {
         // Ajouter le préfixe /api au chemin
-        await authAxios.post('/api/logout', {}, {
+        await authAxios.post(`${API_URL}/logout`, {}, {
           headers: { 'Authorization': `Bearer ${token}` }
         }).catch(() => {
           // Ignorer les erreurs lors du logout côté serveur
@@ -79,6 +88,7 @@ const authService = {
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       delete authAxios.defaults.headers.common['Authorization'];
+      delete axios.defaults.headers.common['Authorization'];
     }
     return true;
   },
@@ -91,8 +101,8 @@ const authService = {
     }
 
     try {
-      // Ajouter le préfixe /api au chemin
-      const response = await authAxios.post('/api/token/refresh', {
+      // Utiliser l'URL de rafraîchissement complète
+      const response = await axios.post(REFRESH_URL, {
         refresh_token: refreshToken
       });
 
@@ -101,6 +111,10 @@ const authService = {
 
         if (response.data.refresh_token) {
           localStorage.setItem(REFRESH_TOKEN_KEY, response.data.refresh_token);
+        }
+
+        if (response.data.user) {
+          localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
         }
 
         authService.setupAxiosInterceptors();
@@ -122,9 +136,8 @@ const authService = {
         return null;
       }
 
-      // Configurer le token pour cette requête spécifique
-      // Ajouter le préfixe /api au chemin
-      const response = await authAxios.get(`/api/auth-status`, {
+      // Vérifier l'état de l'authentification
+      const response = await axios.get(AUTH_STATUS_URL, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -161,8 +174,8 @@ const authService = {
         }
       }
 
-      await authService.logout();
-      return null;
+      // Ne pas se déconnecter automatiquement en cas d'erreur - retourner l'utilisateur stocké
+      return JSON.parse(localStorage.getItem(USER_KEY));
     }
   },
 
@@ -175,7 +188,7 @@ const authService = {
     }
 
     // Intercepteur pour rafraîchir automatiquement le token expiré
-    authAxios.interceptors.response.use(
+    axios.interceptors.response.use(
       response => response,
       async error => {
         const originalRequest = error.config;
@@ -185,49 +198,19 @@ const authService = {
           originalRequest._retry = true;
 
           try {
+            console.log('Tentative de rafraîchissement du token...');
             const refreshed = await authService.refreshToken();
             if (refreshed) {
               // Mettre à jour le token dans la requête d'origine
               const token = localStorage.getItem(TOKEN_KEY);
               originalRequest.headers['Authorization'] = `Bearer ${token}`;
               // Réessayer la requête d'origine avec le nouveau token
-              return authAxios(originalRequest);
-            }
-          } catch (refreshError) {
-            console.error('Échec du rafraîchissement automatique:', refreshError);
-            await authService.logout();
-            window.location = '/login';
-            return Promise.reject(error);
-          }
-        }
-
-        if (error.response && error.response.status === 401) {
-          await authService.logout();
-          window.location = '/login';
-        }
-
-        return Promise.reject(error);
-      }
-    );
-
-    // Également configurer le même intercepteur pour l'instance axios globale
-    axios.interceptors.response.use(
-      response => response,
-      async error => {
-        const originalRequest = error.config;
-
-        if (error.response && error.response.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
-
-          try {
-            const refreshed = await authService.refreshToken();
-            if (refreshed) {
-              const token = localStorage.getItem(TOKEN_KEY);
-              originalRequest.headers['Authorization'] = `Bearer ${token}`;
               return axios(originalRequest);
             }
           } catch (refreshError) {
-            console.error('Échec du rafraîchissement automatique (axios global):', refreshError);
+            console.error('Échec du rafraîchissement automatique:', refreshError);
+            // Ne pas déconnecter en cas d'échec pour permettre une récupération manuelle
+            return Promise.reject(error);
           }
         }
 
@@ -240,7 +223,7 @@ const authService = {
   testApiConnection: async () => {
     try {
       // Ajouter le préfixe /api au chemin
-      const response = await authAxios.get('/api/auth-test');
+      const response = await axios.get(`${API_URL}/auth-test`);
       return {
         success: true,
         status: response.status,
@@ -260,11 +243,17 @@ const authService = {
   getDebugInfo: async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     const user = localStorage.getItem(USER_KEY);
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
 
     return {
       apiUrl: API_URL,
+      authUrl: AUTH_URL,
+      refreshUrl: REFRESH_URL,
+      authStatusUrl: AUTH_STATUS_URL,
       hasToken: !!token,
+      hasRefreshToken: !!refreshToken,
       tokenFirstChars: token ? `${token.substring(0, 10)}...` : null,
+      refreshTokenFirstChars: refreshToken ? `${refreshToken.substring(0, 10)}...` : null,
       hasUser: !!user,
       userEmail: user ? JSON.parse(user).email : null,
       environment: process.env.NODE_ENV

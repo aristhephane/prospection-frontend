@@ -14,7 +14,7 @@ axios.interceptors.request.use(
       config.url = `/${config.url}`;
     }
 
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     if (token) {
       // Format correct pour l'en-tête d'autorisation JWT
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -40,12 +40,32 @@ axios.interceptors.response.use(
       // Cas spécifique pour les erreurs 401 (non autorisé)
       if (error.response.status === 401) {
         console.warn('Erreur d\'authentification 401 détectée');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
-        // Rediriger vers la page de connexion seulement si nous ne sommes pas déjà sur cette page
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+
+        // Ne pas déconnecter immédiatement l'utilisateur
+        // Juste logger l'erreur pour le débogage
+        console.error('Détails de l\'erreur 401:', error.response.data);
+
+        // Si l'erreur se produit 3 fois de suite, alors envisager de rediriger
+        const failedAuthAttempts = parseInt(sessionStorage.getItem('failedAuthAttempts') || '0');
+        if (failedAuthAttempts >= 3) {
+          console.warn('Trop d\'erreurs d\'authentification, redirection vers login');
+          sessionStorage.removeItem('failedAuthAttempts');
+
+          // Uniquement dans ce cas, supprimer les données d'authentification
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+
+          // Et rediriger vers la page de connexion
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        } else {
+          // Incrémenter le compteur d'échecs
+          sessionStorage.setItem('failedAuthAttempts', (failedAuthAttempts + 1).toString());
         }
+      } else {
+        // Réinitialiser le compteur pour les autres types d'erreur
+        sessionStorage.removeItem('failedAuthAttempts');
       }
 
       // Log détaillé des erreurs

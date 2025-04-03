@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
+const API_URL = process.env.REACT_APP_API_URL || 'https://upjv-prospection-vps.amourfoot.fr/api';
+const AUTH_URL = process.env.REACT_APP_AUTH_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/login_check';
 
 const diagnosticService = {
   testConnection: async () => {
@@ -29,8 +30,8 @@ const diagnosticService = {
 
   testAuthentication: async (credentials) => {
     try {
-      const response = await axios.post(`${API_URL}/login_check`, {
-        username: credentials.email,
+      const response = await axios.post(AUTH_URL, {
+        email: credentials.email,
         password: credentials.password
       }, {
         headers: {

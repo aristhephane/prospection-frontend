@@ -1,145 +1,226 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Alert, Spinner, Card, Badge } from 'react-bootstrap';
+import { Button, Card, ListGroup } from 'react-bootstrap';
 import authService from '../services/authService';
 
+/**
+ * Composant pour diagnostiquer les problèmes de connexion à l'API
+ */
 const ConnectionDiagnostics = () => {
-  const [diagnosticResult, setDiagnosticResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [configInfo, setConfigInfo] = useState(null);
-  const [expandedView, setExpandedView] = useState(false);
-
-  // Récupération des informations de configuration au chargement
-  useEffect(() => {
-    const fetchConfigInfo = async () => {
-      try {
-        const info = await authService.getDebugInfo();
-        setConfigInfo(info);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des infos de configuration:", error);
-      }
-    };
-
-    fetchConfigInfo();
-  }, []);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosisResults, setDiagnosisResults] = useState({
+    apiConnection: null,
+    cookiesEnabled: null,
+    corsConfig: null,
+    authEndpoint: null,
+    loading: false
+  });
 
   const runDiagnostics = async () => {
-    setLoading(true);
+    setDiagnosisResults({
+      ...diagnosisResults,
+      loading: true
+    });
+
     try {
-      // Vérifier la connexion API
-      const apiResult = await authService.testApiConnection();
+      // Test de connexion à l'API
+      const apiTest = await authService.testApiConnection();
 
-      // Récupérer à nouveau les informations de configuration
-      const configData = await authService.getDebugInfo();
-      setConfigInfo(configData);
+      // Test des cookies
+      const cookiesTest = testCookiesEnabled();
 
-      // Vérifier si le navigateur bloque les cookies tiers
-      const cookiesEnabled = navigator.cookieEnabled;
+      // Test CORS
+      const corsTest = await testCorsConfiguration();
 
-      // Tester le CORS
-      let corsTest = { success: false, error: "Non testé" };
-      try {
-        const corsResponse = await fetch(configData.apiUrl + '/auth-status', {
-          method: 'OPTIONS',
-          credentials: 'include',
-        });
-        corsTest = {
-          success: corsResponse.ok,
-          status: corsResponse.status,
-        };
-      } catch (e) {
-        corsTest = { success: false, error: e.message };
-      }
+      // Test endpoint d'authentification
+      const authTest = await testAuthEndpoint();
 
-      setDiagnosticResult({
-        api: apiResult,
-        config: configData,
-        browser: {
-          cookiesEnabled,
-          userAgent: navigator.userAgent,
-          language: navigator.language,
-        },
-        cors: corsTest,
-        timestamp: new Date().toISOString()
+      setDiagnosisResults({
+        apiConnection: apiTest,
+        cookiesEnabled: cookiesTest,
+        corsConfig: corsTest,
+        authEndpoint: authTest,
+        loading: false
       });
     } catch (error) {
-      setDiagnosticResult({
-        success: false,
+      console.error('Erreur lors du diagnostic:', error);
+      setDiagnosisResults({
+        ...diagnosisResults,
         error: error.message,
-        stack: error.stack
+        loading: false
       });
-    } finally {
-      setLoading(false);
     }
+  };
+
+  // Test si les cookies sont activés dans le navigateur
+  const testCookiesEnabled = () => {
+    const cookiesEnabled = navigator.cookieEnabled;
+
+    return {
+      success: cookiesEnabled,
+      message: cookiesEnabled
+        ? 'Les cookies sont activés dans votre navigateur'
+        : 'Les cookies sont désactivés - ils sont requis pour l\'authentification',
+      details: {
+        userAgent: navigator.userAgent,
+        cookiesEnabled: cookiesEnabled
+      }
+    };
+  };
+
+  // Test de la configuration CORS
+  const testCorsConfiguration = async () => {
+    try {
+      // Tente une requête OPTIONS vers l'API pour tester CORS
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://upjv-prospection-vps.amourfoot.fr/api'}/auth-test`, {
+        method: 'OPTIONS',
+        headers: {
+          'Origin': window.location.origin
+        },
+        credentials: 'include'  // Important pour les cookies
+      });
+
+      const corsHeadersPresent = response.headers.get('Access-Control-Allow-Origin') !== null;
+      const credentialsAllowed = response.headers.get('Access-Control-Allow-Credentials') === 'true';
+
+      return {
+        success: response.ok && corsHeadersPresent && credentialsAllowed,
+        status: response.status,
+        message: corsHeadersPresent && credentialsAllowed
+          ? 'Configuration CORS correcte avec support des cookies'
+          : 'Problème de configuration CORS pour les cookies',
+        headers: {
+          'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+          'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+          'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+          'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Erreur lors du test CORS',
+        error: error.message
+      };
+    }
+  };
+
+  // Test de l'endpoint d'authentification
+  const testAuthEndpoint = async () => {
+    try {
+      const response = await fetch(process.env.REACT_APP_AUTH_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/auth/login', {
+        method: 'OPTIONS',
+        headers: {
+          'Origin': window.location.origin
+        },
+        credentials: 'include'  // Important pour les cookies
+      });
+
+      return {
+        success: response.ok,
+        status: response.status,
+        message: response.ok
+          ? 'Endpoint d\'authentification accessible'
+          : 'Problème d\'accès à l\'endpoint d\'authentification',
+        headers: {
+          'Content-Type': response.headers.get('Content-Type'),
+          'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+          'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Erreur lors du test de l\'endpoint d\'authentification',
+        error: error.message
+      };
+    }
+  };
+
+  useEffect(() => {
+    // Si l'utilisateur ouvre le diagnostic, lance automatiquement les tests
+    if (showDiagnostics && !diagnosisResults.apiConnection && !diagnosisResults.loading) {
+      runDiagnostics();
+    }
+  }, [showDiagnostics]);
+
+  const getStatusColor = (status) => {
+    return status?.success ? 'success' : 'danger';
   };
 
   return (
     <div className="mt-4">
-      <div className="d-flex justify-content-between align-items-center">
-        <h5>Diagnostics de connexion</h5>
-        <Button
-          variant="link"
-          size="sm"
-          onClick={() => setExpandedView(!expandedView)}
-        >
-          {expandedView ? 'Réduire' : 'Détails avancés'}
-        </Button>
-      </div>
-
-      {configInfo && expandedView && (
-        <Alert variant="info" className="mt-2 mb-2">
-          <div className="d-flex justify-content-between align-items-center">
-            <span><strong>API URL:</strong> {configInfo.apiUrl}</span>
-            <Badge bg={configInfo.environment === 'production' ? 'danger' : 'warning'}>
-              {configInfo.environment}
-            </Badge>
-          </div>
-          <div className="mt-1">
-            <strong>Token:</strong> {configInfo.hasToken ?
-              <Badge bg="success">Présent</Badge> :
-              <Badge bg="danger">Absent</Badge>}
-          </div>
-          <div className="mt-1">
-            <strong>Utilisateur:</strong> {configInfo.hasUser ?
-              <Badge bg="success">{configInfo.userEmail}</Badge> :
-              <Badge bg="danger">Non connecté</Badge>}
-          </div>
-        </Alert>
-      )}
-
       <Button
-        variant="outline-secondary"
+        variant="link"
         size="sm"
-        onClick={runDiagnostics}
-        disabled={loading}
+        onClick={() => setShowDiagnostics(!showDiagnostics)}
+        className="text-muted p-0"
       >
-        {loading ? (
-          <>
-            <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
-            {' '}Test en cours...
-          </>
-        ) : 'Tester la connexion API'}
+        {showDiagnostics ? 'Masquer le diagnostic' : 'Diagnostic de connexion'}
       </Button>
 
-      {diagnosticResult && (
+      {showDiagnostics && (
         <Card className="mt-2">
           <Card.Body>
-            <Alert variant={diagnosticResult.api?.success ? 'success' : 'danger'}>
-              {diagnosticResult.api?.success ? 'Connexion API réussie!' : 'Échec de la connexion API'}
-            </Alert>
+            <h6 className="mb-3">Diagnostic de connexion à l'API</h6>
 
-            {expandedView && (
-              <div className="mt-2">
-                <strong>Détails complets:</strong>
-                <pre style={{ fontSize: '0.8rem', maxHeight: '200px', overflow: 'auto' }}>
-                  {JSON.stringify(diagnosticResult, null, 2)}
-                </pre>
+            {diagnosisResults.loading ? (
+              <div className="text-center">
+                <div className="spinner-border spinner-border-sm text-primary" role="status">
+                  <span className="visually-hidden">Chargement...</span>
+                </div>
+                <p className="mt-2 small">Test des connexions en cours...</p>
               </div>
-            )}
+            ) : (
+              <>
+                <ListGroup variant="flush" className="small">
+                  <ListGroup.Item className={`d-flex justify-content-between align-items-start ${diagnosisResults.apiConnection ? `text-${getStatusColor(diagnosisResults.apiConnection)}` : ''}`}>
+                    <div>Connexion à l'API</div>
+                    <div>{diagnosisResults.apiConnection?.success ? '✓' : '✗'}</div>
+                  </ListGroup.Item>
 
-            {!expandedView && diagnosticResult.api?.error && (
-              <Alert variant="warning" className="mt-2">
-                <strong>Erreur:</strong> {diagnosticResult.api.error}
-              </Alert>
+                  <ListGroup.Item className={`d-flex justify-content-between align-items-start ${diagnosisResults.cookiesEnabled ? `text-${getStatusColor(diagnosisResults.cookiesEnabled)}` : ''}`}>
+                    <div>Cookies activés</div>
+                    <div>{diagnosisResults.cookiesEnabled?.success ? '✓' : '✗'}</div>
+                  </ListGroup.Item>
+
+                  <ListGroup.Item className={`d-flex justify-content-between align-items-start ${diagnosisResults.corsConfig ? `text-${getStatusColor(diagnosisResults.corsConfig)}` : ''}`}>
+                    <div>Configuration CORS</div>
+                    <div>{diagnosisResults.corsConfig?.success ? '✓' : '✗'}</div>
+                  </ListGroup.Item>
+
+                  <ListGroup.Item className={`d-flex justify-content-between align-items-start ${diagnosisResults.authEndpoint ? `text-${getStatusColor(diagnosisResults.authEndpoint)}` : ''}`}>
+                    <div>Endpoint d'authentification</div>
+                    <div>{diagnosisResults.authEndpoint?.success ? '✓' : '✗'}</div>
+                  </ListGroup.Item>
+                </ListGroup>
+
+                {(diagnosisResults.apiConnection || diagnosisResults.corsConfig || diagnosisResults.cookiesEnabled || diagnosisResults.authEndpoint) && (
+                  <div className="mt-3">
+                    <details>
+                      <summary className="text-muted small">Détails du diagnostic</summary>
+                      <pre className="bg-light p-2 mt-2" style={{ fontSize: '0.7rem', maxHeight: '200px', overflow: 'auto' }}>
+                        {JSON.stringify({
+                          api: diagnosisResults.apiConnection,
+                          cookies: diagnosisResults.cookiesEnabled,
+                          cors: diagnosisResults.corsConfig,
+                          auth: diagnosisResults.authEndpoint
+                        }, null, 2)}
+                      </pre>
+                    </details>
+                  </div>
+                )}
+
+                <div className="mt-3">
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={runDiagnostics}
+                    disabled={diagnosisResults.loading}
+                  >
+                    Relancer le diagnostic
+                  </Button>
+                </div>
+              </>
             )}
           </Card.Body>
         </Card>

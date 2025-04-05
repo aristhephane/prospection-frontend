@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = '/api/dashboard';
+const baseAPI = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
+const API_URL = `${baseAPI}/api/dashboard`;
 
 const dashboardService = {
   async getStatistics() {

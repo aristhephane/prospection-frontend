@@ -1,32 +1,34 @@
 import axios from 'axios';
 
-// Toutes les requêtes utilisent des chemins relatifs pour éviter les problèmes
+const baseAPI = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
+
+// Toutes les requêtes utilisent l'URL absolue de l'API
 const getAllFiles = () => {
-  return axios.get('/api/fiches');
+  return axios.get(`${baseAPI}/api/fiches`);
 };
 
 const getFileById = (id) => {
-  return axios.get(`/api/fiches/${id}`);
+  return axios.get(`${baseAPI}/api/fiches/${id}`);
 };
 
 const createFile = (fileData) => {
-  return axios.post(`/api/fiches`, fileData);
+  return axios.post(`${baseAPI}/api/fiches`, fileData);
 };
 
 const updateFile = (id, fileData) => {
-  return axios.put(`/api/fiches/${id}`, fileData);
+  return axios.put(`${baseAPI}/api/fiches/${id}`, fileData);
 };
 
 const deleteFile = (id) => {
-  return axios.delete(`/api/fiches/${id}`);
+  return axios.delete(`${baseAPI}/api/fiches/${id}`);
 };
 
 const getFileHistory = (id) => {
-  return axios.get(`/api/fiches/${id}/historique`);
+  return axios.get(`${baseAPI}/api/fiches/${id}/historique`);
 };
 
 const getEnterprises = () => {
-  return axios.get(`/api/entreprises`);
+  return axios.get(`${baseAPI}/api/entreprises`);
 };
 
 const fileService = {

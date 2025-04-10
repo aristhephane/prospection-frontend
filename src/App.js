@@ -48,6 +48,9 @@ import Statistics from './pages/reports/Statistics';
 // Pages de notification (communs)
 import NotificationsList from './pages/notifications/NotificationsList';
 
+// Page de gestion des entreprises
+import EntreprisePage from './pages/EntreprisePage';
+
 // Configure Axios avec le token d'authentification
 axios.interceptors.request.use(
   (config) => {
@@ -111,8 +114,11 @@ function App() {
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="fiches/consultation" element={<FichesList isAdmin={true} />} />
                     <Route path="fiches/modification" element={<FicheEdit isAdmin={true} />} />
+                    <Route path="fiches/modification/:id" element={<FicheEdit isAdmin={true} />} />
                     <Route path="fiches/generation" element={<FicheCreate isAdmin={true} />} />
                     <Route path="fiches/historique" element={<FicheHistory isAdmin={true} />} />
+                    <Route path="fiches/:id" element={<FicheEdit isAdmin={true} />} />
+                    <Route path="entreprises" element={<EntreprisePage isAdmin={true} />} />
                     <Route path="utilisateurs/gestion" element={<UserManagement />} />
                     <Route path="utilisateurs/roles" element={<RoleManagement />} />
                     <Route path="database/backup" element={<DatabaseBackup />} />
@@ -132,8 +138,11 @@ function App() {
                     <Route path="dashboard" element={<UserDashboard />} />
                     <Route path="fiches/consultation" element={<FichesList />} />
                     <Route path="fiches/modification" element={<FicheEdit />} />
+                    <Route path="fiches/modification/:id" element={<FicheEdit />} />
                     <Route path="fiches/generation" element={<FicheCreate />} />
                     <Route path="fiches/historique" element={<FicheHistory />} />
+                    <Route path="fiches/:id" element={<FicheEdit />} />
+                    <Route path="entreprises" element={<EntreprisePage />} />
                     <Route path="rapports/statistiques" element={<Statistics />} />
                     <Route path="rapports/listings" element={<Reports />} />
                     <Route path="notifications/liste" element={<NotificationsList />} />

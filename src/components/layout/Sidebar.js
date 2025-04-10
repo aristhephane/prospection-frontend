@@ -122,6 +122,17 @@ const Sidebar = ({ isOpen, onClose, isAdmin = false }) => {
 
           <ListItem
             button
+            onClick={() => navigate('/entreprises')}
+            selected={isActiveRoute('/entreprises')}
+          >
+            <ListItemIcon>
+              <BusinessIcon color={isActiveRoute('/entreprises') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Gestion des entreprises" />
+          </ListItem>
+
+          <ListItem
+            button
             onClick={() => navigate('/export')}
             selected={isActiveRoute('/export')}
           >

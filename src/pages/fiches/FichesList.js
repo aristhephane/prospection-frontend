@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, CircularProgress, Chip, IconButton,
-  Tooltip, TextField, InputAdornment
+  Tooltip, TextField, InputAdornment, Dialog, DialogActions, DialogContent,
+  DialogContentText, DialogTitle, Button, Snackbar, Alert
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,26 +20,34 @@ const FichesList = ({ isAdmin }) => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredFiches, setFilteredFiches] = useState([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ficheToDelete, setFicheToDelete] = useState(null);
+  const [message, setMessage] = useState({ open: false, text: '', severity: 'success' });
 
   useEffect(() => {
-    const fetchFiches = async () => {
-      setLoading(true);
-      try {
-        // Récupérer les fiches depuis l'API
-        const response = await axios.get('/api/prospection');
-        if (response.data.success) {
-          setFiches(response.data.data || []);
-          setFilteredFiches(response.data.data || []);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des fiches:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchFiches();
   }, []);
+
+  const fetchFiches = async () => {
+    setLoading(true);
+    try {
+      // Récupérer les fiches depuis l'API
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/fiches`);
+      if (response.data.success) {
+        setFiches(response.data.fiches || []);
+        setFilteredFiches(response.data.fiches || []);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des fiches:', error);
+      setMessage({
+        open: true,
+        text: 'Erreur lors du chargement des fiches',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filtrer les fiches lorsque le terme de recherche change
   useEffect(() => {
@@ -98,6 +108,53 @@ const FichesList = ({ isAdmin }) => {
 
   const handleEditFiche = (id) => {
     navigate(`/fiches/modification/${id}`);
+  };
+
+  const handleDeleteClick = (fiche) => {
+    setFicheToDelete(fiche);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteDialogClose = () => {
+    setDeleteDialogOpen(false);
+    setFicheToDelete(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!ficheToDelete) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/fiches/${ficheToDelete.id}`);
+
+      if (response.data.success) {
+        setMessage({
+          open: true,
+          text: 'Fiche supprimée avec succès',
+          severity: 'success'
+        });
+
+        // Rafraîchir la liste des fiches
+        fetchFiches();
+      } else {
+        throw new Error(response.data.message || 'Erreur lors de la suppression de la fiche');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la fiche:', error);
+      setMessage({
+        open: true,
+        text: error.message || 'Erreur lors de la suppression de la fiche',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+      setFicheToDelete(null);
+    }
+  };
+
+  const handleCloseMessage = () => {
+    setMessage(prev => ({ ...prev, open: false }));
   };
 
   return (
@@ -181,6 +238,15 @@ const FichesList = ({ isAdmin }) => {
                               <EditIcon />
                             </IconButton>
                           </Tooltip>
+                          <Tooltip title="Supprimer">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteClick(fiche)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -203,6 +269,45 @@ const FichesList = ({ isAdmin }) => {
           <Typography>Aucune fiche trouvée</Typography>
         )}
       </Paper>
+
+      {/* Dialog de confirmation de suppression */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteDialogClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Confirmation de suppression
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Êtes-vous sûr de vouloir supprimer la fiche pour l'entreprise "{ficheToDelete?.entreprise?.raisonSociale}" ?
+            <br />
+            Cette action est irréversible.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteDialogClose} color="primary">
+            Annuler
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notifications */}
+      <Snackbar
+        open={message.open}
+        autoHideDuration={6000}
+        onClose={handleCloseMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseMessage} severity={message.severity}>
+          {message.text}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

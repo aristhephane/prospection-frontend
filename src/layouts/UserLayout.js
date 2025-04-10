@@ -120,7 +120,7 @@ export default function UserLayout({ children }) {
 
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get('/api/notifications/count');
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/notifications/count`);
         setNotificationCount(response.data.count || 0);
       } catch (error) {
         console.error('Erreur lors du chargement des notifications:', error);

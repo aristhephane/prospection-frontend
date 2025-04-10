@@ -45,9 +45,12 @@ axios.interceptors.response.use(
         // Juste logger l'erreur pour le débogage
         console.error('Détails de l\'erreur 401:', error.response.data);
 
-        // Si l'erreur se produit 3 fois de suite, alors envisager de rediriger
+        // Augmenter le seuil de tolérance pour les erreurs 401 pour éviter les déconnexions
+        // fréquentes lors des rechargements de page
         const failedAuthAttempts = parseInt(sessionStorage.getItem('failedAuthAttempts') || '0');
-        if (failedAuthAttempts >= 3) {
+
+        // Augmenter le seuil à 10 tentatives échouées au lieu de 3
+        if (failedAuthAttempts >= 10) {
           console.warn('Trop d\'erreurs d\'authentification, redirection vers login');
           sessionStorage.removeItem('failedAuthAttempts');
 
@@ -62,6 +65,14 @@ axios.interceptors.response.use(
         } else {
           // Incrémenter le compteur d'échecs
           sessionStorage.setItem('failedAuthAttempts', (failedAuthAttempts + 1).toString());
+
+          // Ne pas rejeter l'erreur pour les endpoints non critiques
+          // Si l'URL contient certains patterns, comme les vérifications de statut
+          const url = error.config.url || '';
+          if (url.includes('status') || url.includes('auth-test') || url.includes('check')) {
+            console.warn('Erreur 401 sur un endpoint non critique, continuons sans déconnecter');
+            return Promise.resolve({ data: { authenticated: false } });
+          }
         }
       } else {
         // Réinitialiser le compteur pour les autres types d'erreur

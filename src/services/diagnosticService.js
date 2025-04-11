@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://upjv-prospection-vps.amourfoot.fr/api';
-const AUTH_URL = process.env.REACT_APP_AUTH_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/login_check';
+// Utiliser directement le préfixe /api car le proxy s'en occupe
+const AUTH_URL = '/api/auth/login';
 
 const diagnosticService = {
   testConnection: async () => {
     try {
-      const response = await axios.get(`${API_URL}/auth-test`, {
+      const response = await axios.get('/api/auth-test', {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -58,7 +58,7 @@ const diagnosticService = {
 
   getServerInfo: async () => {
     try {
-      const response = await axios.get(`${API_URL}/server-info`);
+      const response = await axios.get('/api/server-info');
       return {
         success: true,
         status: response.status,
@@ -68,6 +68,52 @@ const diagnosticService = {
       return {
         success: false,
         status: error.response?.status,
+        error: error.message
+      };
+    }
+  },
+
+  testApiRoutes: async () => {
+    try {
+      const testRoutes = [
+        { url: '/api/fiches', method: 'GET', description: 'Liste des fiches' },
+        { url: '/api/utilisateurs', method: 'GET', description: 'Liste des utilisateurs' },
+        { url: '/api/entreprises', method: 'GET', description: 'Liste des entreprises' },
+        { url: '/api/dashboard/statistics', method: 'GET', description: 'Statistiques du tableau de bord' }
+      ];
+
+      const results = await Promise.all(testRoutes.map(async (route) => {
+        try {
+          const response = await axios({
+            method: route.method,
+            url: route.url,
+            timeout: 5000
+          });
+
+          return {
+            route: route.url,
+            description: route.description,
+            success: true,
+            status: response.status
+          };
+        } catch (error) {
+          return {
+            route: route.url,
+            description: route.description,
+            success: false,
+            status: error.response?.status,
+            error: error.message
+          };
+        }
+      }));
+
+      return {
+        success: true,
+        results: results
+      };
+    } catch (error) {
+      return {
+        success: false,
         error: error.message
       };
     }

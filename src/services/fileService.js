@@ -1,38 +1,50 @@
 import axios from 'axios';
 
-const baseAPI = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
+// Utiliser directement le préfixe /api car le proxy s'en occupe
 
-// Toutes les requêtes utilisent l'URL absolue de l'API
+// Toutes les requêtes utilisent l'URL relative pour que le proxy fonctionne
 const getAllFiles = () => {
-  return axios.get(`${baseAPI}/api/fiches`);
+  return axios.get('/api/fiches');
 };
 
 const getFileById = (id) => {
-  return axios.get(`${baseAPI}/api/fiches/${id}`);
+  return axios.get(`/api/fiches/${id}`);
 };
 
 const createFile = (fileData) => {
-  return axios.post(`${baseAPI}/api/fiches/nouvelle`, fileData);
+  return axios.post('/api/fiches/nouvelle', fileData);
 };
 
 const updateFile = (id, fileData) => {
-  return axios.put(`${baseAPI}/api/fiches/${id}`, fileData);
+  return axios.put(`/api/fiches/${id}`, fileData);
 };
 
 const deleteFile = (id) => {
-  return axios.delete(`${baseAPI}/api/fiches/${id}`);
+  return axios.delete(`/api/fiches/${id}`);
 };
 
 const getFileHistory = (id) => {
-  return axios.get(`${baseAPI}/api/fiches/${id}/historique`);
+  return axios.get(`/api/fiches/${id}/historique`);
 };
 
 const getEnterprises = () => {
-  return axios.get(`${baseAPI}/api/fiches/entreprises`);
+  return axios.get('/api/entreprises');
 };
 
 const getRecentFiles = () => {
-  return axios.get(`${baseAPI}/api/fiches/dernieres`);
+  return axios.get('/api/fiches/dernieres');
+};
+
+const getPrefilledFile = (enterpriseId) => {
+  return axios.get(`/api/fiches/entreprise/${enterpriseId}/pre-rempli`);
+};
+
+const getPossibleTransitions = (id) => {
+  return axios.get(`/api/fiches/${id}/possible-transitions`);
+};
+
+const applyTransition = (id, transition) => {
+  return axios.post(`/api/fiches/${id}/apply-transition/${transition}`);
 };
 
 const fileService = {
@@ -43,7 +55,10 @@ const fileService = {
   deleteFile,
   getFileHistory,
   getEnterprises,
-  getRecentFiles
+  getRecentFiles,
+  getPrefilledFile,
+  getPossibleTransitions,
+  applyTransition
 };
 
 export default fileService;

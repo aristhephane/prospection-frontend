@@ -31,11 +31,21 @@ const FichesList = ({ isAdmin }) => {
   const fetchFiches = async () => {
     setLoading(true);
     try {
-      // Récupérer les fiches depuis l'API en utilisant le service
       const response = await fileService.getAllFiles();
-      if (response.data.success) {
-        setFiches(response.data.fiches || []);
-        setFilteredFiches(response.data.fiches || []);
+
+      // Vérification de la structure de la réponse
+      if (response?.data?.success && Array.isArray(response.data.fiches)) {
+        setFiches(response.data.fiches);
+        setFilteredFiches(response.data.fiches);
+      } else {
+        console.error('Format de réponse incorrect:', response);
+        setMessage({
+          open: true,
+          text: 'Format de réponse incorrect',
+          severity: 'error'
+        });
+        setFiches([]);
+        setFilteredFiches([]);
       }
     } catch (error) {
       console.error('Erreur lors du chargement des fiches:', error);
@@ -44,6 +54,8 @@ const FichesList = ({ isAdmin }) => {
         text: 'Erreur lors du chargement des fiches',
         severity: 'error'
       });
+      setFiches([]);
+      setFilteredFiches([]);
     } finally {
       setLoading(false);
     }
@@ -87,6 +99,7 @@ const FichesList = ({ isAdmin }) => {
       case 'rendez_vous': return 'warning';
       case 'proposition': return 'info';
       case 'client': return 'success';
+      case 'perdu': return 'error';
       default: return 'default';
     }
   };
@@ -98,6 +111,7 @@ const FichesList = ({ isAdmin }) => {
       case 'rendez_vous': return 'Rendez-vous';
       case 'proposition': return 'Proposition';
       case 'client': return 'Client';
+      case 'perdu': return 'Perdu';
       default: return status;
     }
   };
@@ -134,10 +148,9 @@ const FichesList = ({ isAdmin }) => {
 
     setLoading(true);
     try {
-      // Utiliser le service pour supprimer une fiche
       const response = await fileService.deleteFile(ficheToDelete.id);
 
-      if (response.data.success) {
+      if (response.data?.success) {
         setMessage({
           open: true,
           text: 'Fiche supprimée avec succès',
@@ -147,7 +160,7 @@ const FichesList = ({ isAdmin }) => {
         // Rafraîchir la liste des fiches
         fetchFiches();
       } else {
-        throw new Error(response.data.message || 'Erreur lors de la suppression de la fiche');
+        throw new Error(response.data?.message || 'Erreur lors de la suppression de la fiche');
       }
     } catch (error) {
       console.error('Erreur lors de la suppression de la fiche:', error);
@@ -174,9 +187,9 @@ const FichesList = ({ isAdmin }) => {
       </Typography>
 
       <Paper sx={{ p: 3, mt: 3 }}>
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between' }}>
           <TextField
-            fullWidth
+            sx={{ flexGrow: 1, mr: 2 }}
             variant="outlined"
             placeholder="Rechercher une fiche..."
             value={searchTerm}
@@ -189,6 +202,13 @@ const FichesList = ({ isAdmin }) => {
               ),
             }}
           />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => navigate('/fiches/creer')}
+          >
+            Créer une fiche
+          </Button>
         </Box>
 
         {loading ? (

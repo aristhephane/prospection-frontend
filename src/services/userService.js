@@ -1,42 +1,53 @@
 import axios from 'axios';
 
-// Définir l'URL de base pour l'API
-const API_URL = process.env.REACT_APP_API_URL || 'https://api.upjv-prospection-vps.amourfoot.fr';
+// Utiliser directement le préfixe /api car le proxy s'en occupe
 
 const getUsers = () => {
-  return axios.get(`${API_URL}/api/utilisateurs`);
+  return axios.get('/api/utilisateurs');
 };
 
 const getUserById = (id) => {
-  return axios.get(`${API_URL}/utilisateurs/${id}`);
+  return axios.get(`/api/utilisateurs/${id}`);
 };
 
 const getCurrentUserProfile = () => {
-  return axios.get(`${API_URL}/utilisateurs/profil`);
+  return axios.get('/api/utilisateurs/profil');
 };
 
 const createUser = (userData) => {
-  return axios.post(`${API_URL}/utilisateurs/ajouter`, userData);
+  return axios.post('/api/utilisateurs/ajouter', userData);
 };
 
 const updateUser = (id, userData) => {
-  return axios.post(`${API_URL}/utilisateurs/${id}/modifier`, userData);
+  return axios.post(`/api/utilisateurs/${id}/modifier`, userData);
 };
 
 const updateProfile = (profileData) => {
-  return axios.post(`${API_URL}/utilisateurs/profil`, profileData);
+  return axios.post('/api/utilisateurs/profil', profileData);
 };
 
 const deactivateUser = (id) => {
-  return axios.post(`${API_URL}/utilisateurs/${id}/desactiver`);
+  return axios.post(`/api/utilisateurs/${id}/desactiver`);
 };
 
 const deleteUser = (id) => {
-  return axios.delete(`${API_URL}/utilisateurs/${id}`);
+  return axios.delete(`/api/utilisateurs/${id}`);
 };
 
 const getRoles = () => {
-  return axios.get(`${API_URL}/roles`);
+  return axios.get('/api/roles');
+};
+
+const changePassword = (id, passwordData) => {
+  return axios.post(`/api/utilisateurs/${id}/change-password`, passwordData);
+};
+
+const resetPassword = (email) => {
+  return axios.post('/api/reset-password/request', { email });
+};
+
+const confirmResetPassword = (token, password) => {
+  return axios.post('/api/reset-password/confirm', { token, password });
 };
 
 const userService = {
@@ -48,7 +59,10 @@ const userService = {
   updateProfile,
   deactivateUser,
   deleteUser,
-  getRoles
+  getRoles,
+  changePassword,
+  resetPassword,
+  confirmResetPassword
 };
 
 export default userService;

@@ -7,6 +7,9 @@ module.exports = function (app) {
       target: 'https://upjv-prospection-vps.amourfoot.fr',
       changeOrigin: true,
       secure: true,
+      pathRewrite: {
+        '^/api': '/api'
+      },
       onProxyReq: function (proxyReq, req, res) {
         // Log de la requête
         console.log('Requête proxy:', {
@@ -35,7 +38,7 @@ module.exports = function (app) {
         // Conservation des cookies de session du backend
         const setCookieHeader = proxyRes.headers['set-cookie'];
         if (setCookieHeader) {
-          console.log('Cookie reçu du backend:', setCookieHeader);
+          proxyRes.headers['set-cookie'] = setCookieHeader;
         }
 
         // Log détaillé des erreurs
@@ -48,7 +51,7 @@ module.exports = function (app) {
         }
       },
       // Ajout d'un timeout plus long pour les requêtes
-      timeout: 30000,
+      timeout: 60000,
       // Activation des logs détaillés
       logLevel: 'debug'
     })

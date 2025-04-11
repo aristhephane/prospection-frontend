@@ -1,17 +1,16 @@
 import axios from 'axios';
 
-// URL de l'API - Utilisation des variables d'environnement
-const API_URL = process.env.REACT_APP_API_URL || 'https://upjv-prospection-vps.amourfoot.fr/api';
-const AUTH_URL = process.env.REACT_APP_AUTH_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/auth/login';
-const AUTH_STATUS_URL = process.env.REACT_APP_AUTH_STATUS_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/auth/status';
-const LOGOUT_URL = process.env.REACT_APP_LOGOUT_URL || 'https://upjv-prospection-vps.amourfoot.fr/api/auth/logout';
+// Utiliser directement le préfixe /api car le proxy s'en occupe
+const AUTH_URL = '/api/auth/login';
+const AUTH_STATUS_URL = '/api/auth/status';
+const LOGOUT_URL = '/api/auth/logout';
 
 // Clé pour stocker les informations utilisateur dans localStorage
 const USER_KEY = 'user';
 
 // Instance axios configurée pour les requêtes API
 const apiAxios = axios.create({
-  baseURL: API_URL,
+  baseURL: '',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -100,7 +99,7 @@ const authService = {
   // Test de connexion API
   testApiConnection: async () => {
     try {
-      const response = await apiAxios.get(`${API_URL}/auth-test`);
+      const response = await apiAxios.get('/api/auth-test');
       return {
         success: true,
         status: response.status,

@@ -9,8 +9,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import fileService from '../../services/fileService'; // Import the service
 
 const FichesList = ({ isAdmin }) => {
   const navigate = useNavigate();
@@ -31,8 +31,8 @@ const FichesList = ({ isAdmin }) => {
   const fetchFiches = async () => {
     setLoading(true);
     try {
-      // Récupérer les fiches depuis l'API
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/fiches`);
+      // Récupérer les fiches depuis l'API en utilisant le service
+      const response = await fileService.getAllFiles();
       if (response.data.success) {
         setFiches(response.data.fiches || []);
         setFilteredFiches(response.data.fiches || []);
@@ -107,7 +107,16 @@ const FichesList = ({ isAdmin }) => {
   };
 
   const handleEditFiche = (id) => {
-    navigate(`/fiches/modification/${id}`);
+    if (!id) {
+      console.error("ID de fiche manquant pour la modification");
+      setMessage({
+        open: true,
+        text: 'Erreur: ID de fiche manquant',
+        severity: 'error'
+      });
+      return;
+    }
+    navigate(`/fiches/${id}/modifier`);
   };
 
   const handleDeleteClick = (fiche) => {
@@ -125,7 +134,8 @@ const FichesList = ({ isAdmin }) => {
 
     setLoading(true);
     try {
-      const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/fiches/${ficheToDelete.id}`);
+      // Utiliser le service pour supprimer une fiche
+      const response = await fileService.deleteFile(ficheToDelete.id);
 
       if (response.data.success) {
         setMessage({

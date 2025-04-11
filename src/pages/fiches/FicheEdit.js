@@ -53,9 +53,9 @@ const FicheEdit = ({ isAdmin }) => {
           severity: 'success'
         });
 
-        // Redirection vers la page de consultation après 2 secondes
+        // Redirection vers la page de détails de la fiche après 2 secondes
         setTimeout(() => {
-          navigate('/fiches/consultation');
+          navigate(`/fiches/${id}`);
         }, 2000);
       } else {
         throw new Error(response.data.message || 'Erreur lors de la mise à jour de la fiche');

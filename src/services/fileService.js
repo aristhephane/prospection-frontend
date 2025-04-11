@@ -12,7 +12,7 @@ const getFileById = (id) => {
 };
 
 const createFile = (fileData) => {
-  return axios.post(`${baseAPI}/api/fiches`, fileData);
+  return axios.post(`${baseAPI}/api/fiches/nouvelle`, fileData);
 };
 
 const updateFile = (id, fileData) => {
@@ -28,7 +28,11 @@ const getFileHistory = (id) => {
 };
 
 const getEnterprises = () => {
-  return axios.get(`${baseAPI}/api/entreprises`);
+  return axios.get(`${baseAPI}/api/fiches/entreprises`);
+};
+
+const getRecentFiles = () => {
+  return axios.get(`${baseAPI}/api/fiches/dernieres`);
 };
 
 const fileService = {
@@ -38,7 +42,8 @@ const fileService = {
   updateFile,
   deleteFile,
   getFileHistory,
-  getEnterprises
+  getEnterprises,
+  getRecentFiles
 };
 
 export default fileService;

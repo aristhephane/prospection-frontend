@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, Button, CircularProgress, Snackbar, Alert
 } from '@mui/material';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import FicheForm from '../../components/fiche/FicheForm';
+import fileService from '../../services/fileService'; // Import the service
 
 const FicheCreate = ({ isAdmin }) => {
   const navigate = useNavigate();
@@ -18,8 +18,8 @@ const FicheCreate = ({ isAdmin }) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Récupération des 5 dernières fiches créées
-        const fichesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/fiches/dernieres`);
+        // Récupération des 5 dernières fiches créées en utilisant le service
+        const fichesResponse = await fileService.getRecentFiles();
         if (fichesResponse.data.success) {
           setDernieresFiches(fichesResponse.data.fiches || []);
         }
@@ -41,7 +41,8 @@ const FicheCreate = ({ isAdmin }) => {
   const handleFicheSubmit = async (formData) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/fiches/nouvelle`, {
+      // Utilisation du service pour créer une nouvelle fiche
+      const response = await fileService.createFile({
         ...formData,
         entreprise: formData.entrepriseId, // Conversion du nom du champ
       });
@@ -56,8 +57,8 @@ const FicheCreate = ({ isAdmin }) => {
         // Masquer le formulaire et mettre à jour la liste des dernières fiches
         setShowForm(false);
 
-        // Rafraîchir la liste des dernières fiches
-        const fichesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/fiches/dernieres`);
+        // Rafraîchir la liste des dernières fiches en utilisant le service
+        const fichesResponse = await fileService.getRecentFiles();
         if (fichesResponse.data.success) {
           setDernieresFiches(fichesResponse.data.fiches || []);
         }

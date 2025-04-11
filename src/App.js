@@ -51,9 +51,14 @@ import NotificationsList from './pages/notifications/NotificationsList';
 // Page de gestion des entreprises
 import EntreprisePage from './pages/EntreprisePage';
 
-// Configure Axios avec le token d'authentification
+// Configure Axios avec le token d'authentification et évite la duplication du préfixe /api/
 axios.interceptors.request.use(
   (config) => {
+    // Éviter la duplication du préfixe /api/api/
+    if (config.url && config.url.includes('/api/api/')) {
+      config.url = config.url.replace('/api/api/', '/api/');
+    }
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -113,11 +118,11 @@ function App() {
                   <Routes>
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="fiches/consultation" element={<FichesList isAdmin={true} />} />
-                    <Route path="fiches/modification" element={<FicheEdit isAdmin={true} />} />
-                    <Route path="fiches/modification/:id" element={<FicheEdit isAdmin={true} />} />
                     <Route path="fiches/generation" element={<FicheCreate isAdmin={true} />} />
                     <Route path="fiches/historique" element={<FicheHistory isAdmin={true} />} />
-                    <Route path="fiches/:id" element={<FicheEdit isAdmin={true} />} />
+                    <Route path="fiches/:id/modifier" element={<FicheEdit isAdmin={true} />} />
+                    <Route path="fiches/:id/historique" element={<FicheHistory isAdmin={true} />} />
+                    <Route path="fiches/:id" element={<FicheEdit isAdmin={true} viewOnly={true} />} />
                     <Route path="entreprises" element={<EntreprisePage isAdmin={true} />} />
                     <Route path="utilisateurs/gestion" element={<UserManagement />} />
                     <Route path="utilisateurs/roles" element={<RoleManagement />} />
@@ -137,11 +142,11 @@ function App() {
                   <Routes>
                     <Route path="dashboard" element={<UserDashboard />} />
                     <Route path="fiches/consultation" element={<FichesList />} />
-                    <Route path="fiches/modification" element={<FicheEdit />} />
-                    <Route path="fiches/modification/:id" element={<FicheEdit />} />
                     <Route path="fiches/generation" element={<FicheCreate />} />
                     <Route path="fiches/historique" element={<FicheHistory />} />
-                    <Route path="fiches/:id" element={<FicheEdit />} />
+                    <Route path="fiches/:id/modifier" element={<FicheEdit />} />
+                    <Route path="fiches/:id/historique" element={<FicheHistory />} />
+                    <Route path="fiches/:id" element={<FicheEdit viewOnly={true} />} />
                     <Route path="entreprises" element={<EntreprisePage />} />
                     <Route path="rapports/statistiques" element={<Statistics />} />
                     <Route path="rapports/listings" element={<Reports />} />
@@ -160,4 +165,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

@@ -1,23 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Alert, Badge } from 'react-bootstrap';
+import { Table, Button, Alert, Badge, Spinner, Container, Row, Col, Form, InputGroup } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import prospectionService from '../services/prospectionService';
+import { FaSearch, FaPlus, FaEye } from 'react-icons/fa';
 
 const ProspectionList = () => {
   const [prospections, setProspections] = useState([]);
+  const [filteredProspections, setFilteredProspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchProspections = async () => {
       try {
         setLoading(true);
         const response = await prospectionService.getAllProspections();
-        setProspections(response.data || []);
-        setError('');
+
+        if (response.success && Array.isArray(response.fiches)) {
+          setProspections(response.fiches);
+          setFilteredProspections(response.fiches);
+        } else {
+          console.error('Format de réponse incorrect:', response);
+          setError('Format de réponse incorrect. Veuillez réessayer.');
+          setProspections([]);
+          setFilteredProspections([]);
+        }
       } catch (err) {
         setError('Erreur lors du chargement des prospections');
         console.error(err);
+        setProspections([]);
+        setFilteredProspections([]);
       } finally {
         setLoading(false);
       }
@@ -25,6 +38,27 @@ const ProspectionList = () => {
 
     fetchProspections();
   }, []);
+
+  // Filtrer les prospections quand le terme de recherche change
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredProspections(prospections);
+    } else {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      const filtered = prospections.filter(prospection => {
+        return (
+          (prospection.entreprise?.raisonSociale?.toLowerCase().includes(lowercasedFilter)) ||
+          (prospection.commentaires?.toLowerCase().includes(lowercasedFilter)) ||
+          (prospection.statut?.toLowerCase().includes(lowercasedFilter))
+        );
+      });
+      setFilteredProspections(filtered);
+    }
+  }, [searchTerm, prospections]);
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -47,49 +81,72 @@ const ProspectionList = () => {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center mt-5">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Chargement...</span>
+      <Container className="mt-4">
+        <div className="d-flex justify-content-center mt-5">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Chargement...</span>
+          </Spinner>
         </div>
-      </div>
+      </Container>
     );
   }
 
   if (error) {
-    return <Alert variant="danger">{error}</Alert>;
+    return (
+      <Container className="mt-4">
+        <Alert variant="danger">{error}</Alert>
+      </Container>
+    );
   }
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Liste des prospections</h1>
-        <Button as={Link} to="/prospection/new" variant="primary">
-          <i className="fas fa-plus me-2"></i> Nouvelle prospection
-        </Button>
-      </div>
+    <Container className="mt-4">
+      <Row className="mb-4">
+        <Col md={8}>
+          <h1>Liste des prospections</h1>
+        </Col>
+        <Col md={4} className="d-flex justify-content-end">
+          <Button as={Link} to="/prospection/new" variant="primary">
+            <FaPlus className="me-2" /> Nouvelle prospection
+          </Button>
+        </Col>
+      </Row>
 
-      {prospections.length === 0 ? (
+      <Row className="mb-4">
+        <Col>
+          <InputGroup>
+            <InputGroup.Text><FaSearch /></InputGroup.Text>
+            <Form.Control
+              placeholder="Rechercher..."
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </InputGroup>
+        </Col>
+      </Row>
+
+      {filteredProspections.length === 0 ? (
         <Alert variant="info">Aucune prospection trouvée.</Alert>
       ) : (
         <Table striped bordered hover responsive>
           <thead>
             <tr>
               <th>ID</th>
-              <th>Nom</th>
               <th>Entreprise</th>
+              <th>Date visite</th>
               <th>Statut</th>
               <th>Date de création</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {prospections.map((prospection) => (
+            {filteredProspections.map((prospection) => (
               <tr key={prospection.id}>
                 <td>{prospection.id}</td>
-                <td>{prospection.nom}</td>
-                <td>{prospection.entreprise}</td>
+                <td>{prospection.entreprise?.raisonSociale || 'Non spécifiée'}</td>
+                <td>{new Date(prospection.dateVisite).toLocaleDateString('fr-FR')}</td>
                 <td>{getStatusBadge(prospection.statut)}</td>
-                <td>{new Date(prospection.dateCreation).toLocaleDateString()}</td>
+                <td>{new Date(prospection.dateCreation).toLocaleDateString('fr-FR')}</td>
                 <td>
                   <Button
                     as={Link}
@@ -98,7 +155,7 @@ const ProspectionList = () => {
                     size="sm"
                     className="me-2"
                   >
-                    <i className="fas fa-eye"></i>
+                    <FaEye className="me-1" /> Détails
                   </Button>
                 </td>
               </tr>
@@ -106,7 +163,7 @@ const ProspectionList = () => {
           </tbody>
         </Table>
       )}
-    </div>
+    </Container>
   );
 };
 

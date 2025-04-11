@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Container, Card, Row, Col, Badge, Alert, Button } from 'react-bootstrap';
+import { Container, Card, Row, Col, Alert, Button } from 'react-bootstrap';
 import fileService from '../../services/fileService';
 
 const FileDetail = () => {
@@ -133,8 +133,8 @@ const FileDetail = () => {
                 <dt className="col-sm-4">Statut</dt>
                 <dd className="col-sm-8">
                   <span className={`badge ${file.statut === 'nouveau' ? 'bg-primary' :
-                      file.statut === 'en_cours' ? 'bg-info' :
-                        file.statut === 'termine' ? 'bg-success' : 'bg-secondary'
+                    file.statut === 'en_cours' ? 'bg-info' :
+                      file.statut === 'termine' ? 'bg-success' : 'bg-secondary'
                     }`}>
                     {file.statut}
                   </span>

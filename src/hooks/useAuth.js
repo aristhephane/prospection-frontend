@@ -1,130 +1,157 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import authService from '../services/authService';
 
+// Contexte d'authentification
 const AuthContext = createContext(null);
 
-const TOKEN_REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
+// Intervalle de vérification de l'état d'authentification (5 minutes)
+const AUTH_CHECK_INTERVAL = 5 * 60 * 1000;
 
+/**
+ * Fournisseur du contexte d'authentification basé sur les sessions
+ */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [checkTimer, setCheckTimer] = useState(null);
 
-  const refreshToken = useCallback(async () => {
+  // Vérification périodique de l'état d'authentification
+  const checkAuthStatus = useCallback(async () => {
     try {
-      if (isAuthenticated) {
-        await authService.refreshToken();
-      }
-    } catch (error) {
-      console.error("Erreur lors du rafraîchissement du token:", error);
-      // Si le rafraîchissement échoue, déconnexion
-      if (error.response && error.response.status === 401) {
+      const userData = await authService.getCurrentUser();
+
+      if (userData) {
+        setUser(userData);
+        setIsAuthenticated(true);
+      } else {
         setUser(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('user');
       }
+
+      return !!userData;
+    } catch (error) {
+      console.error('Erreur lors de la vérification du statut d\'authentification:', error);
+      setUser(null);
+      setIsAuthenticated(false);
+      return false;
     }
-  }, [isAuthenticated]);
+  }, []);
 
+  // Configuration de la vérification périodique
   useEffect(() => {
-    // Configuration du rafraîchissement périodique du token
-    const intervalId = setInterval(() => {
-      refreshToken();
-    }, TOKEN_REFRESH_INTERVAL);
+    if (isAuthenticated && !checkTimer) {
+      const timerId = setInterval(checkAuthStatus, AUTH_CHECK_INTERVAL);
+      setCheckTimer(timerId);
+    }
 
-    return () => clearInterval(intervalId);
-  }, [refreshToken]);
+    return () => {
+      if (checkTimer) {
+        clearInterval(checkTimer);
+        setCheckTimer(null);
+      }
+    };
+  }, [isAuthenticated, checkAuthStatus, checkTimer]);
 
+  // Vérification initiale
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const initAuth = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        // Vérifier d'abord le stockage local
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        // Tenter de récupérer l'utilisateur du stockage local pour un affichage rapide
+        const cachedUser = authService.getUserFromStorage();
+        if (cachedUser) {
+          setUser(cachedUser);
           setIsAuthenticated(true);
         }
 
-        // Puis valider avec le backend
-        const userData = await authService.getCurrentUser();
-        if (userData) {
-          setUser(userData);
-          setIsAuthenticated(true);
-          localStorage.setItem('user', JSON.stringify(userData));
-        } else if (storedUser) {
-          // Si le backend ne reconnait pas l'utilisateur mais qu'il est en stockage local
-          localStorage.removeItem('user');
-          setUser(null);
-          setIsAuthenticated(false);
-        }
+        // Vérifier l'état d'authentification avec le serveur
+        await checkAuthStatus();
       } catch (error) {
-        console.error("Erreur d'authentification:", error);
-        setUser(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('user');
-        setError(error.message || "Erreur d'authentification");
+        console.error('Erreur d\'initialisation de l\'authentification:', error);
+        setError('Erreur de connexion au serveur');
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuthStatus();
-  }, []);
+    initAuth();
+  }, [checkAuthStatus]);
 
+  // Fonction de connexion
   const login = async (credentials) => {
     setLoading(true);
     setError(null);
 
     try {
       const userData = await authService.login(credentials);
-      if (userData) {
-        setUser(userData);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return userData;
+      setUser(userData);
+      setIsAuthenticated(true);
+
+      // Configurer un timer pour la vérification d'auth si nécessaire
+      if (!checkTimer) {
+        const timerId = setInterval(checkAuthStatus, AUTH_CHECK_INTERVAL);
+        setCheckTimer(timerId);
       }
-      throw new Error("Échec de l'authentification");
+
+      return userData;
     } catch (error) {
-      console.error("Erreur lors de la connexion:", error);
-      setError(error.message || "Échec de l'authentification");
-      throw error;
+      console.error('Erreur de connexion:', error);
+      const errorMessage = error.message || 'Échec de l\'authentification';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fonction de déconnexion
   const logout = async () => {
     setLoading(true);
 
     try {
+      // Nettoyage du timer de vérification
+      if (checkTimer) {
+        clearInterval(checkTimer);
+        setCheckTimer(null);
+      }
+
+      // Déconnexion côté serveur
       await authService.logout();
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
+      console.error('Erreur lors de la déconnexion:', error);
     } finally {
+      // Mise à jour de l'état, même en cas d'erreur
       setUser(null);
       setIsAuthenticated(false);
-      localStorage.removeItem('user');
       setLoading(false);
     }
   };
 
-  return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated,
-      loading,
-      error,
-      login,
-      logout,
-      refreshToken
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // Valeur du contexte
+  const value = {
+    user,
+    isAuthenticated,
+    loading,
+    error,
+    login,
+    logout,
+    checkAuth: checkAuthStatus
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+/**
+ * Hook pour utiliser le contexte d'authentification
+ */
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
+  }
+  return context;
+};

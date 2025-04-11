@@ -14,7 +14,7 @@ const Login = () => {
   const { login, isAuthenticated } = useAuth();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Important: empêche le formulaire HTML standard de soumettre
     try {
       setError('');
       setDebugInfo(null);

@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-// Toutes les requêtes utilisent des chemins relatifs pour éviter les problèmes
+// Utiliser directement le préfixe /api car le proxy s'en occupe
+
+// Toutes les requêtes utilisent l'URL relative pour que le proxy fonctionne
 const getAllFiles = () => {
   return axios.get('/api/fiches');
 };
@@ -10,7 +12,7 @@ const getFileById = (id) => {
 };
 
 const createFile = (fileData) => {
-  return axios.post(`/api/fiches`, fileData);
+  return axios.post('/api/fiches/nouvelle', fileData);
 };
 
 const updateFile = (id, fileData) => {
@@ -26,7 +28,23 @@ const getFileHistory = (id) => {
 };
 
 const getEnterprises = () => {
-  return axios.get(`/api/entreprises`);
+  return axios.get('/api/entreprises');
+};
+
+const getRecentFiles = () => {
+  return axios.get('/api/fiches/dernieres');
+};
+
+const getPrefilledFile = (enterpriseId) => {
+  return axios.get(`/api/fiches/entreprise/${enterpriseId}/pre-rempli`);
+};
+
+const getPossibleTransitions = (id) => {
+  return axios.get(`/api/fiches/${id}/possible-transitions`);
+};
+
+const applyTransition = (id, transition) => {
+  return axios.post(`/api/fiches/${id}/apply-transition/${transition}`);
 };
 
 const fileService = {
@@ -36,7 +54,11 @@ const fileService = {
   updateFile,
   deleteFile,
   getFileHistory,
-  getEnterprises
+  getEnterprises,
+  getRecentFiles,
+  getPrefilledFile,
+  getPossibleTransitions,
+  applyTransition
 };
 
 export default fileService;

@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// Utiliser directement le préfixe /api car le proxy s'en occupe
+// Les chemins d'API sont relatifs à la baseURL, il ne faut pas ajouter /api/ en plus
 
 const prospectionService = {
   async getAllProspections() {
     try {
-      const response = await axios.get('/api/fiches');
+      const response = await axios.get('/fiches');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des fiches:', error);
@@ -18,7 +18,7 @@ const prospectionService = {
       throw new Error('Identifiant de fiche manquant');
     }
     try {
-      const response = await axios.get(`/api/fiches/${id}`);
+      const response = await axios.get(`/fiches/${id}`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération de la fiche:', error);
@@ -28,7 +28,7 @@ const prospectionService = {
 
   async createProspection(prospectionData) {
     try {
-      const response = await axios.post('/api/fiches/nouvelle', prospectionData);
+      const response = await axios.post('/fiches/nouvelle', prospectionData);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la création de la fiche:', error);
@@ -41,7 +41,7 @@ const prospectionService = {
       throw new Error('Identifiant de fiche manquant');
     }
     try {
-      const response = await axios.put(`/api/fiches/${id}`, prospectionData);
+      const response = await axios.put(`/fiches/${id}`, prospectionData);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la fiche:', error);
@@ -54,7 +54,7 @@ const prospectionService = {
       throw new Error('Identifiant de fiche manquant');
     }
     try {
-      const response = await axios.delete(`/api/fiches/${id}`);
+      const response = await axios.delete(`/fiches/${id}`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la suppression de la fiche:', error);
@@ -64,7 +64,7 @@ const prospectionService = {
 
   async getDernieresFiches() {
     try {
-      const response = await axios.get('/api/fiches/dernieres');
+      const response = await axios.get('/fiches/dernieres');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des dernières fiches:', error);
@@ -77,7 +77,7 @@ const prospectionService = {
       throw new Error('Identifiant de fiche manquant');
     }
     try {
-      const response = await axios.get(`/api/fiches/${id}/historique`);
+      const response = await axios.get(`/fiches/${id}/historique`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération de l\'historique:', error);
@@ -87,7 +87,7 @@ const prospectionService = {
 
   async applyTransition(id, transition) {
     try {
-      const response = await axios.post(`/api/fiches/${id}/apply-transition/${transition}`);
+      const response = await axios.post(`/fiches/${id}/apply-transition/${transition}`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de l\'application de la transition:', error);
@@ -97,7 +97,7 @@ const prospectionService = {
 
   async getPossibleTransitions(id) {
     try {
-      const response = await axios.get(`/api/fiches/${id}/possible-transitions`);
+      const response = await axios.get(`/fiches/${id}/possible-transitions`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des transitions possibles:', error);
@@ -107,7 +107,7 @@ const prospectionService = {
 
   async getEntreprises() {
     try {
-      const response = await axios.get('/api/entreprises');
+      const response = await axios.get('/entreprises');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des entreprises:', error);
@@ -117,7 +117,7 @@ const prospectionService = {
 
   async getPrefilledFiche(entrepriseId) {
     try {
-      const response = await axios.get(`/api/fiches/entreprise/${entrepriseId}/pre-rempli`);
+      const response = await axios.get(`/fiches/entreprise/${entrepriseId}/pre-rempli`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération de la fiche pré-remplie:', error);

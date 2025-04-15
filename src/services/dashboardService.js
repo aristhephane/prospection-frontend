@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// Utiliser directement le préfixe /api car le proxy s'en occupe
+// Les chemins d'API sont relatifs à la baseURL, il ne faut pas ajouter /api/ en plus
 
 const dashboardService = {
   async getStatistics() {
     try {
-      const response = await axios.get('/api/dashboard/statistics');
+      const response = await axios.get('/dashboard/statistics');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des statistiques:', error);
@@ -15,7 +15,7 @@ const dashboardService = {
 
   async getProspection() {
     try {
-      const response = await axios.get('/api/dashboard/prospection');
+      const response = await axios.get('/dashboard/prospection');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des données de prospection:', error);
@@ -25,7 +25,7 @@ const dashboardService = {
 
   async getRecentActivities() {
     try {
-      const response = await axios.get('/api/dashboard/recent-activities');
+      const response = await axios.get('/dashboard/recent-activities');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des activités récentes:', error);
@@ -35,7 +35,7 @@ const dashboardService = {
 
   async getUserStatistics() {
     try {
-      const response = await axios.get('/api/dashboard/user-statistics');
+      const response = await axios.get('/dashboard/user-statistics');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des statistiques utilisateur:', error);

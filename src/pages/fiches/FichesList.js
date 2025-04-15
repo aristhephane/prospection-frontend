@@ -28,46 +28,13 @@ const FichesList = ({ isAdmin }) => {
     fetchFiches();
   }, []);
 
-  const fetchFiches = async () => {
-    setLoading(true);
-    try {
-      const response = await fileService.getAllFiles();
-
-      // Vérification de la structure de la réponse
-      if (response?.data?.success && Array.isArray(response.data.fiches)) {
-        setFiches(response.data.fiches);
-        setFilteredFiches(response.data.fiches);
-      } else {
-        console.error('Format de réponse incorrect:', response);
-        setMessage({
-          open: true,
-          text: 'Format de réponse incorrect',
-          severity: 'error'
-        });
-        setFiches([]);
-        setFilteredFiches([]);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des fiches:', error);
-      setMessage({
-        open: true,
-        text: 'Erreur lors du chargement des fiches',
-        severity: 'error'
-      });
-      setFiches([]);
-      setFilteredFiches([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Filtrer les fiches lorsque le terme de recherche change
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredFiches(fiches);
+  // Fonction pour filtrer les fiches selon le terme de recherche
+  const filterFiches = (fichesArray, term) => {
+    if (!term || term.trim() === '') {
+      setFilteredFiches(fichesArray);
     } else {
-      const lowercasedFilter = searchTerm.toLowerCase();
-      const filtered = fiches.filter(fiche => {
+      const lowercasedFilter = term.toLowerCase();
+      const filtered = fichesArray.filter(fiche => {
         return (
           (fiche.entreprise?.raisonSociale?.toLowerCase().includes(lowercasedFilter)) ||
           (fiche.commentaires?.toLowerCase().includes(lowercasedFilter)) ||
@@ -77,6 +44,49 @@ const FichesList = ({ isAdmin }) => {
       setFilteredFiches(filtered);
     }
     setPage(0); // Revenir à la première page lors du filtrage
+  };
+
+  const fetchFiches = async () => {
+    try {
+      setLoading(true);
+      console.log('Tentative de récupération des fiches...');
+
+      // Récupération des fiches via le service
+      const response = await fileService.getAllFiles();
+      console.log('Réponse du serveur pour les fiches:', response.data);
+
+      if (response.data.success) {
+        setFiches(response.data.fiches || []);
+        // Filtrer les fiches avec le terme de recherche actuel
+        filterFiches(response.data.fiches, searchTerm);
+      } else {
+        setMessage({
+          open: true,
+          text: response.data.message || 'Erreur lors du chargement des fiches',
+          severity: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des fiches:', error);
+
+      // Afficher des détails plus précis sur l'erreur
+      const errorMessage = error.response
+        ? `Erreur ${error.response.status}: ${error.response.data?.message || 'Erreur serveur'}`
+        : 'Erreur de connexion au serveur';
+
+      setMessage({
+        open: true,
+        text: errorMessage,
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filtrer les fiches lorsque le terme de recherche change
+  useEffect(() => {
+    filterFiches(fiches, searchTerm);
   }, [searchTerm, fiches]);
 
   const handleChangePage = (event, newPage) => {

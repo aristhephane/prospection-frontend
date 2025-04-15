@@ -40,6 +40,7 @@ import FichesList from './pages/fiches/FichesList';
 import FicheEdit from './pages/fiches/FicheEdit';
 import FicheCreate from './pages/fiches/FicheCreate';
 import FicheHistory from './pages/fiches/FicheHistory';
+import FicheSearch from './pages/fiches/FicheSearch';
 
 // Composants rapports (communs)
 import Reports from './pages/reports/Reports';
@@ -58,7 +59,7 @@ axios.interceptors.request.use(
     if (config.url && config.url.includes('/api/api/')) {
       config.url = config.url.replace('/api/api/', '/api/');
     }
-    
+
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -118,6 +119,7 @@ function App() {
                   <Routes>
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="fiches/consultation" element={<FichesList isAdmin={true} />} />
+                    <Route path="fiches/recherche" element={<FicheSearch isAdmin={true} />} />
                     <Route path="fiches/generation" element={<FicheCreate isAdmin={true} />} />
                     <Route path="fiches/historique" element={<FicheHistory isAdmin={true} />} />
                     <Route path="fiches/:id/modifier" element={<FicheEdit isAdmin={true} />} />
@@ -142,6 +144,7 @@ function App() {
                   <Routes>
                     <Route path="dashboard" element={<UserDashboard />} />
                     <Route path="fiches/consultation" element={<FichesList />} />
+                    <Route path="fiches/recherche" element={<FicheSearch />} />
                     <Route path="fiches/generation" element={<FicheCreate />} />
                     <Route path="fiches/historique" element={<FicheHistory />} />
                     <Route path="fiches/:id/modifier" element={<FicheEdit />} />

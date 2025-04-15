@@ -47,9 +47,20 @@ const FicheForm = ({ onSubmit, initialValues }) => {
   const fetchEntreprises = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/entreprises`);
-      setEntreprises(response.data);
+      const response = await axios.get('/entreprises');
+
+      if (response.data && response.data.success && Array.isArray(response.data.entreprises)) {
+        setEntreprises(response.data.entreprises);
+      } else if (response.data && Array.isArray(response.data)) {
+        setEntreprises(response.data);
+      } else {
+        console.error('Format de réponse inattendu:', response.data);
+        setEntreprises([]);
+        message.error('Erreur: format de données inattendu');
+      }
     } catch (error) {
+      console.error('Erreur lors du chargement des entreprises:', error);
+      setEntreprises([]);
       message.error('Erreur lors du chargement des entreprises');
     }
     setLoading(false);
@@ -58,9 +69,15 @@ const FicheForm = ({ onSubmit, initialValues }) => {
   const handleEntrepriseSelect = async (entrepriseId) => {
     if (entrepriseId) {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/entreprises/${entrepriseId}`);
-        setSelectedEntreprise(response.data);
+        const response = await axios.get(`/entreprises/${entrepriseId}`);
+
+        if (response.data && response.data.success) {
+          setSelectedEntreprise(response.data.entreprise);
+        } else {
+          setSelectedEntreprise(response.data);
+        }
       } catch (error) {
+        console.error('Erreur lors du chargement des détails de l\'entreprise:', error);
         message.error('Erreur lors du chargement des détails de l\'entreprise');
       }
     } else {
@@ -70,13 +87,24 @@ const FicheForm = ({ onSubmit, initialValues }) => {
 
   const handleEntrepriseCreate = async (values) => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/entreprises`, values);
-      message.success('Entreprise créée avec succès');
+      const response = await axios.post('/entreprises', values);
+
+      let entrepriseId;
+      if (response.data && response.data.success) {
+        entrepriseId = response.data.entreprise.id;
+        message.success('Entreprise créée avec succès');
+      } else {
+        entrepriseId = response.data.id;
+        message.success('Entreprise créée avec succès');
+      }
+
       await fetchEntreprises();
       setModalVisible(false);
-      form.setFieldsValue({ entrepriseId: response.data.id });
-      setSelectedEntreprise(response.data);
+      form.setFieldsValue({ entrepriseId: entrepriseId });
+
+      await handleEntrepriseSelect(entrepriseId);
     } catch (error) {
+      console.error('Erreur lors de la création de l\'entreprise:', error);
       message.error('Erreur lors de la création de l\'entreprise');
     }
   };

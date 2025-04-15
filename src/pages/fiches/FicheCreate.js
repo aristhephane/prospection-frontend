@@ -20,16 +20,36 @@ const FicheCreate = ({ isAdmin }) => {
       try {
         // Récupération des 5 dernières fiches créées en utilisant le service
         const fichesResponse = await fileService.getRecentFiles();
+
+        // Si la réponse est succès, on met à jour les fiches
         if (fichesResponse.data.success) {
           setDernieresFiches(fichesResponse.data.fiches || []);
+
+          // Afficher un message si aucune fiche n'est disponible
+          if (fichesResponse.data.message) {
+            setMessage({
+              open: true,
+              text: fichesResponse.data.message,
+              severity: 'info'
+            });
+          }
+        } else {
+          console.error('Erreur dans la réponse API:', fichesResponse.data);
+          setMessage({
+            open: true,
+            text: fichesResponse.data.message || 'Erreur lors du chargement des données',
+            severity: 'error'
+          });
         }
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
         setMessage({
           open: true,
-          text: 'Erreur lors du chargement des données',
+          text: error.response?.data?.message || 'Erreur de connexion au serveur',
           severity: 'error'
         });
+        // S'assurer que dernieresFiches est vide en cas d'erreur
+        setDernieresFiches([]);
       } finally {
         setLoading(false);
       }

@@ -1,53 +1,53 @@
 import axios from 'axios';
 
-// Utiliser directement le préfixe /api car le proxy s'en occupe
+// Les chemins d'API sont relatifs à la baseURL, il ne faut pas ajouter /api/ en plus
 
 const getUsers = () => {
-  return axios.get('/api/utilisateurs');
+  return axios.get('/utilisateurs');
 };
 
 const getUserById = (id) => {
-  return axios.get(`/api/utilisateurs/${id}`);
+  return axios.get(`/utilisateurs/${id}`);
 };
 
 const getCurrentUserProfile = () => {
-  return axios.get('/api/utilisateurs/profil');
+  return axios.get('/utilisateurs/profil');
 };
 
 const createUser = (userData) => {
-  return axios.post('/api/utilisateurs/ajouter', userData);
+  return axios.post('/utilisateurs/ajouter', userData);
 };
 
 const updateUser = (id, userData) => {
-  return axios.post(`/api/utilisateurs/${id}/modifier`, userData);
+  return axios.post(`/utilisateurs/${id}/modifier`, userData);
 };
 
 const updateProfile = (profileData) => {
-  return axios.post('/api/utilisateurs/profil', profileData);
+  return axios.post('/utilisateurs/profil', profileData);
 };
 
 const deactivateUser = (id) => {
-  return axios.post(`/api/utilisateurs/${id}/desactiver`);
+  return axios.post(`/utilisateurs/${id}/desactiver`);
 };
 
 const deleteUser = (id) => {
-  return axios.delete(`/api/utilisateurs/${id}`);
+  return axios.delete(`/utilisateurs/${id}`);
 };
 
 const getRoles = () => {
-  return axios.get('/api/roles');
+  return axios.get('/roles');
 };
 
 const changePassword = (id, passwordData) => {
-  return axios.post(`/api/utilisateurs/${id}/change-password`, passwordData);
+  return axios.post(`/utilisateurs/${id}/change-password`, passwordData);
 };
 
 const resetPassword = (email) => {
-  return axios.post('/api/reset-password/request', { email });
+  return axios.post('/reset-password/request', { email });
 };
 
 const confirmResetPassword = (token, password) => {
-  return axios.post('/api/reset-password/confirm', { token, password });
+  return axios.post('/reset-password/confirm', { token, password });
 };
 
 const userService = {

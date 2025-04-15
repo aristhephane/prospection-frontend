@@ -115,10 +115,12 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await axios.get('/api/interface/admin-menu');
+        const response = await axios.get('/interface/admin-menu');
+        console.log('Réponse du menu:', response.data);
         setMenuItems(response.data.items || []);
       } catch (error) {
         console.error('Erreur lors du chargement du menu:', error);
+        setMenuItems([]);
       } finally {
         setLoading(false);
       }
@@ -126,10 +128,12 @@ export default function AdminLayout({ children }) {
 
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/notifications/count`);
+        const response = await axios.get('/notifications/count');
+        console.log('Réponse des notifications:', response.data);
         setNotificationCount(response.data.count || 0);
       } catch (error) {
         console.error('Erreur lors du chargement des notifications:', error);
+        setNotificationCount(0);
       }
     };
 

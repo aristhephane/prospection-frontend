@@ -109,7 +109,7 @@ export default function UserLayout({ children }) {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await axios.get('/api/interface/user-menu');
+        const response = await axios.get('/interface/user-menu');
         setMenuItems(response.data.items || []);
       } catch (error) {
         console.error('Erreur lors du chargement du menu:', error);
@@ -120,7 +120,7 @@ export default function UserLayout({ children }) {
 
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/notifications/count`);
+        const response = await axios.get('/notifications/count');
         setNotificationCount(response.data.count || 0);
       } catch (error) {
         console.error('Erreur lors du chargement des notifications:', error);

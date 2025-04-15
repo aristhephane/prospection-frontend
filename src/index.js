@@ -1,10 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from './hooks/useAuth';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { fr } from 'date-fns/locale';
 
 // Setup axios interceptors for authentication
 import './config/axios';
@@ -13,7 +20,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <AuthProvider>
-      <App />
+      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+        <App />
+      </LocalizationProvider>
     </AuthProvider>
   </React.StrictMode>
 );

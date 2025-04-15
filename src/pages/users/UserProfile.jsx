@@ -27,13 +27,13 @@ const UserProfile = () => {
         setLoading(true);
         const response = await userService.getCurrentUserProfile();
 
-        // Copier uniquement les champs pertinents
-        setUser({
-          ...user,
+        // Utiliser une mise à jour fonctionnelle pour éviter la dépendance manquante
+        setUser(prevUser => ({
+          ...prevUser,
           nom: response.data.nom,
           prenom: response.data.prenom,
           email: response.data.email
-        });
+        }));
 
         setError('');
       } catch (err) {

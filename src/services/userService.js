@@ -1,42 +1,53 @@
 import axios from 'axios';
 
-// Définir l'URL de base pour l'API
-const API_URL = window.location.protocol + '//' + window.location.hostname + '/api';
+// Les chemins d'API sont relatifs à la baseURL, il ne faut pas ajouter /api/ en plus
 
 const getUsers = () => {
-  return axios.get('/api/utilisateurs');
+  return axios.get('/utilisateurs');
 };
 
 const getUserById = (id) => {
-  return axios.get(`${API_URL}/utilisateurs/${id}`);
+  return axios.get(`/utilisateurs/${id}`);
 };
 
 const getCurrentUserProfile = () => {
-  return axios.get(`${API_URL}/utilisateurs/profil`);
+  return axios.get('/utilisateurs/profil');
 };
 
 const createUser = (userData) => {
-  return axios.post(`${API_URL}/utilisateurs/ajouter`, userData);
+  return axios.post('/utilisateurs/ajouter', userData);
 };
 
 const updateUser = (id, userData) => {
-  return axios.post(`${API_URL}/utilisateurs/${id}/modifier`, userData);
+  return axios.post(`/utilisateurs/${id}/modifier`, userData);
 };
 
 const updateProfile = (profileData) => {
-  return axios.post(`${API_URL}/utilisateurs/profil`, profileData);
+  return axios.post('/utilisateurs/profil', profileData);
 };
 
 const deactivateUser = (id) => {
-  return axios.post(`${API_URL}/utilisateurs/${id}/desactiver`);
+  return axios.post(`/utilisateurs/${id}/desactiver`);
 };
 
 const deleteUser = (id) => {
-  return axios.delete(`${API_URL}/utilisateurs/${id}`);
+  return axios.delete(`/utilisateurs/${id}`);
 };
 
 const getRoles = () => {
-  return axios.get(`${API_URL}/roles`);
+  return axios.get('/roles');
+};
+
+const changePassword = (id, passwordData) => {
+  return axios.post(`/utilisateurs/${id}/change-password`, passwordData);
+};
+
+const resetPassword = (email) => {
+  return axios.post('/reset-password/request', { email });
+};
+
+const confirmResetPassword = (token, password) => {
+  return axios.post('/reset-password/confirm', { token, password });
 };
 
 const userService = {
@@ -48,7 +59,10 @@ const userService = {
   updateProfile,
   deactivateUser,
   deleteUser,
-  getRoles
+  getRoles,
+  changePassword,
+  resetPassword,
+  confirmResetPassword
 };
 
 export default userService;

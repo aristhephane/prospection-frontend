@@ -1,112 +1,170 @@
-import React from 'react';
-import './App.css';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import axios from 'axios';
+import './App.css';
+
+// Thème personnalisé
+import theme from './theme/theme';
+
+// Composants de mise en page
 import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import ProspectionList from './pages/ProspectionList';
-import ProspectionDetail from './pages/ProspectionDetail';
-import Login from './pages/Login';
+
+// Composants d'authentification
+import Login from './pages/auth/Login';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+// Interfaces utilisateur
+import AdminLayout from './layouts/AdminLayout';
+import UserLayout from './layouts/UserLayout';
+
+// Composants communs
 import NotFound from './pages/NotFound';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import { AuthProvider } from './hooks/useAuth';
+import LoadingSpinner from './components/LoadingSpinner';
 
-// Import des composants de gestion d'utilisateurs
-import UserList from './pages/users/UserList';
-import UserDetail from './pages/users/UserDetail';
-import UserForm from './pages/users/UserForm';
-import UserProfile from './pages/users/UserProfile';
+// Pages administrateur
+import AdminDashboard from './pages/admin/Dashboard';
+import UserManagement from './pages/admin/UserManagement';
+import RoleManagement from './pages/admin/RoleManagement';
+import DatabaseBackup from './pages/admin/DatabaseBackup';
+import AdvancedSettings from './pages/admin/AdvancedSettings';
 
-// Import des composants de gestion de fiches
-import FileList from './pages/files/FileList';
-import FileDetail from './pages/files/FileDetail';
-import FileForm from './pages/files/FileForm';
-import FileHistory from './pages/files/FileHistory';
+// Pages utilisateur
+import UserDashboard from './pages/user/Dashboard';
+import ProfileSettings from './pages/user/ProfileSettings';
+import AppSettings from './pages/user/AppSettings';
+
+// Composants fiches (communs)
+import FichesList from './pages/fiches/FichesList';
+import FicheEdit from './pages/fiches/FicheEdit';
+import FicheCreate from './pages/fiches/FicheCreate';
+import FicheHistory from './pages/fiches/FicheHistory';
+import FicheSearch from './pages/fiches/FicheSearch';
+
+// Composants rapports (communs)
+import Reports from './pages/reports/Reports';
+import Statistics from './pages/reports/Statistics';
+
+// Pages de notification (communs)
+import NotificationsList from './pages/notifications/NotificationsList';
+
+// Page de gestion des entreprises
+import EntreprisePage from './pages/EntreprisePage';
+
+// Configure Axios avec le token d'authentification et évite la duplication du préfixe /api/
+axios.interceptors.request.use(
+  (config) => {
+    // Éviter la duplication du préfixe /api/api/
+    if (config.url && config.url.includes('/api/api/')) {
+      config.url = config.url.replace('/api/api/', '/api/');
+    }
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Composant de protection des routes
+const ProtectedRoute = ({ children, requiredRole }) => {
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  if (requiredRole && (!user.roles || !user.roles.includes(requiredRole))) {
+    return <Navigate to="/unauthorized" />;
+  }
+
+  return children;
+};
+
+// Composant de redirection selon le rôle
+const RoleBasedRedirect = () => {
+  const { user } = useAuth();
+
+  if (user && user.typeInterface === 'administrateur') {
+    return <Navigate to="/admin/dashboard" />;
+  }
+
+  return <Navigate to="/dashboard" />;
+};
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="prospection" element={
-              <ProtectedRoute>
-                <ProspectionList />
-              </ProtectedRoute>
-            } />
-            <Route path="prospection/:id" element={
-              <ProtectedRoute>
-                <ProspectionDetail />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Route d'authentification */}
+            <Route path="/login" element={<Login />} />
+
+            {/* Redirection en fonction du rôle */}
+            <Route path="/" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />
+
+            {/* Routes administrateur */}
+            <Route path="/admin/*" element={
+              <ProtectedRoute requiredRole="ROLE_ADMINISTRATEUR">
+                <AdminLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="fiches/consultation" element={<FichesList isAdmin={true} />} />
+                    <Route path="fiches/recherche" element={<FicheSearch isAdmin={true} />} />
+                    <Route path="fiches/generation" element={<FicheCreate isAdmin={true} />} />
+                    <Route path="fiches/historique" element={<FicheHistory isAdmin={true} />} />
+                    <Route path="fiches/:id/modifier" element={<FicheEdit isAdmin={true} />} />
+                    <Route path="fiches/:id/historique" element={<FicheHistory isAdmin={true} />} />
+                    <Route path="fiches/:id" element={<FicheEdit isAdmin={true} viewOnly={true} />} />
+                    <Route path="entreprises" element={<EntreprisePage isAdmin={true} />} />
+                    <Route path="utilisateurs/gestion" element={<UserManagement />} />
+                    <Route path="utilisateurs/roles" element={<RoleManagement />} />
+                    <Route path="database/backup" element={<DatabaseBackup />} />
+                    <Route path="parametres/secteurs" element={<AdvancedSettings section="secteurs" />} />
+                    <Route path="notifications/liste" element={<NotificationsList isAdmin={true} />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AdminLayout>
               </ProtectedRoute>
             } />
 
-            {/* Routes pour la gestion des utilisateurs (admin seulement) */}
-            <Route path="utilisateurs" element={
-              <ProtectedRoute requiredRole="ROLE_ADMIN">
-                <UserList />
-              </ProtectedRoute>
-            } />
-            <Route path="utilisateurs/ajouter" element={
-              <ProtectedRoute requiredRole="ROLE_ADMIN">
-                <UserForm />
-              </ProtectedRoute>
-            } />
-            <Route path="utilisateurs/:id" element={
-              <ProtectedRoute requiredRole="ROLE_ADMIN">
-                <UserDetail />
-              </ProtectedRoute>
-            } />
-            <Route path="utilisateurs/:id/modifier" element={
-              <ProtectedRoute requiredRole="ROLE_ADMIN">
-                <UserForm isEditMode={true} />
-              </ProtectedRoute>
-            } />
-
-            {/* Route pour le profil utilisateur (accessible à tous les utilisateurs) */}
-            <Route path="profil" element={
+            {/* Routes utilisateur standard */}
+            <Route path="/*" element={
               <ProtectedRoute>
-                <UserProfile />
+                <UserLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<UserDashboard />} />
+                    <Route path="fiches/consultation" element={<FichesList />} />
+                    <Route path="fiches/recherche" element={<FicheSearch />} />
+                    <Route path="fiches/generation" element={<FicheCreate />} />
+                    <Route path="fiches/historique" element={<FicheHistory />} />
+                    <Route path="fiches/:id/modifier" element={<FicheEdit />} />
+                    <Route path="fiches/:id/historique" element={<FicheHistory />} />
+                    <Route path="fiches/:id" element={<FicheEdit viewOnly={true} />} />
+                    <Route path="entreprises" element={<EntreprisePage />} />
+                    <Route path="rapports/statistiques" element={<Statistics />} />
+                    <Route path="rapports/listings" element={<Reports />} />
+                    <Route path="notifications/liste" element={<NotificationsList />} />
+                    <Route path="parametres/profil" element={<ProfileSettings />} />
+                    <Route path="parametres/application" element={<AppSettings />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </UserLayout>
               </ProtectedRoute>
             } />
-
-            {/* Routes pour la gestion des fiches */}
-            <Route path="fiches" element={
-              <ProtectedRoute>
-                <FileList />
-              </ProtectedRoute>
-            } />
-            <Route path="fiches/ajouter" element={
-              <ProtectedRoute>
-                <FileForm />
-              </ProtectedRoute>
-            } />
-            <Route path="fiches/:id" element={
-              <ProtectedRoute>
-                <FileDetail />
-              </ProtectedRoute>
-            } />
-            <Route path="fiches/:id/modifier" element={
-              <ProtectedRoute>
-                <FileForm isEditMode={true} />
-              </ProtectedRoute>
-            } />
-            <Route path="fiches/:id/historique" element={
-              <ProtectedRoute>
-                <FileHistory />
-              </ProtectedRoute>
-            } />
-
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </Router>
-    </AuthProvider>
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

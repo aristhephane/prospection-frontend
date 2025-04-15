@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Row, Col, Badge, Alert, Modal } from 'react-bootstrap';
+import { Card, Button, Row, Col, Badge, Alert, Modal, Container, Spinner } from 'react-bootstrap';
 import prospectionService from '../services/prospectionService';
+import { FaArrowLeft, FaHistory, FaEdit, FaTrashAlt } from 'react-icons/fa';
 
 const ProspectionDetail = () => {
   const { id } = useParams();
@@ -12,18 +13,33 @@ const ProspectionDetail = () => {
   const [error, setError] = useState('');
   const [showTransitionModal, setShowTransitionModal] = useState(false);
   const [selectedTransition, setSelectedTransition] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const prospectionData = await prospectionService.getProspectionById(id);
-        setProspection(prospectionData.fiche || prospectionData);
+        const response = await prospectionService.getProspectionById(id);
 
-        const transitionsData = await prospectionService.getPossibleTransitions(id);
-        setPossibleTransitions(transitionsData.transitions || []);
+        if (response.success && response.fiche) {
+          setProspection(response.fiche);
 
-        setError('');
+          // Récupérer les transitions possibles
+          try {
+            const transitionsResponse = await prospectionService.getPossibleTransitions(id);
+            if (transitionsResponse.success && Array.isArray(transitionsResponse.transitions)) {
+              setPossibleTransitions(transitionsResponse.transitions);
+            }
+          } catch (err) {
+            console.error('Erreur lors de la récupération des transitions:', err);
+            setPossibleTransitions([]);
+          }
+
+          setError('');
+        } else {
+          console.error('Format de réponse incorrect:', response);
+          setError('Erreur de chargement des données de la fiche');
+        }
       } catch (err) {
         setError('Erreur lors du chargement des données');
         console.error(err);
@@ -44,18 +60,45 @@ const ProspectionDetail = () => {
 
   const applyTransition = async () => {
     try {
+      setLoading(true);
       const result = await prospectionService.applyTransition(id, selectedTransition);
-      setProspection(result.fiche);
 
-      // Refresh possible transitions
-      const transitionsData = await prospectionService.getPossibleTransitions(id);
-      setPossibleTransitions(transitionsData.transitions || []);
+      if (result.success && result.fiche) {
+        setProspection(result.fiche);
 
-      setShowTransitionModal(false);
+        // Rafraîchir les transitions possibles
+        const transitionsResponse = await prospectionService.getPossibleTransitions(id);
+        if (transitionsResponse.success) {
+          setPossibleTransitions(transitionsResponse.transitions || []);
+        }
+      } else {
+        throw new Error(result.message || 'Erreur lors de l\'application de la transition');
+      }
     } catch (err) {
       setError('Erreur lors de l\'application de la transition');
       console.error(err);
+    } finally {
+      setLoading(false);
+      setShowTransitionModal(false);
     }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setLoading(true);
+      const result = await prospectionService.deleteProspection(id);
+
+      if (result.success) {
+        navigate('/fiches');
+      } else {
+        throw new Error(result.message || 'Erreur lors de la suppression');
+      }
+    } catch (err) {
+      setError('Erreur lors de la suppression de la fiche');
+      console.error(err);
+      setLoading(false);
+    }
+    setShowDeleteModal(false);
   };
 
   const getStatusBadge = (status) => {
@@ -79,52 +122,111 @@ const ProspectionDetail = () => {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center mt-5">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Chargement...</span>
+      <Container className="mt-4">
+        <div className="d-flex justify-content-center mt-5">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Chargement...</span>
+          </Spinner>
         </div>
-      </div>
+      </Container>
     );
   }
 
   if (error) {
-    return <Alert variant="danger">{error}</Alert>;
+    return (
+      <Container className="mt-4">
+        <Alert variant="danger">{error}</Alert>
+      </Container>
+    );
   }
 
   if (!prospection) {
-    return <Alert variant="warning">Prospection non trouvée</Alert>;
+    return (
+      <Container className="mt-4">
+        <Alert variant="warning">Fiche non trouvée</Alert>
+      </Container>
+    );
   }
 
   return (
-    <div>
+    <Container className="mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Détails de la prospection</h1>
-        <Button variant="outline-secondary" onClick={() => navigate('/prospection')}>
-          <i className="fas fa-arrow-left me-2"></i> Retour
-        </Button>
+        <h1>Détails de la fiche</h1>
+        <div>
+          <Button variant="outline-secondary" onClick={() => navigate('/fiches')} className="me-2">
+            <FaArrowLeft className="me-2" /> Retour
+          </Button>
+          <Button
+            variant="outline-primary"
+            onClick={() => navigate(`/fiches/${id}/historique`)}
+            className="me-2"
+          >
+            <FaHistory className="me-2" /> Historique
+          </Button>
+          <Button
+            variant="outline-success"
+            onClick={() => navigate(`/fiches/${id}/modifier`)}
+            className="me-2"
+          >
+            <FaEdit className="me-2" /> Modifier
+          </Button>
+          <Button
+            variant="outline-danger"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            <FaTrashAlt className="me-2" /> Supprimer
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-4">
         <Card.Header className="d-flex justify-content-between align-items-center">
-          <h2 className="m-0">{prospection.nom}</h2>
+          <h2 className="m-0">Fiche N°{prospection.id}</h2>
           {getStatusBadge(prospection.statut)}
         </Card.Header>
         <Card.Body>
           <Row className="mb-3">
             <Col md={6}>
-              <p><strong>Entreprise:</strong> {prospection.entreprise}</p>
-              <p><strong>Email:</strong> {prospection.email || 'Non renseigné'}</p>
-              <p><strong>Téléphone:</strong> {prospection.telephone || 'Non renseigné'}</p>
+              <p><strong>Entreprise :</strong> {prospection.entreprise?.raisonSociale}</p>
+              <p><strong>Date de visite :</strong> {new Date(prospection.dateVisite).toLocaleDateString('fr-FR')}</p>
+              {prospection.dateVisiteSuivante && (
+                <p><strong>Prochaine visite prévue :</strong> {new Date(prospection.dateVisiteSuivante).toLocaleDateString('fr-FR')}</p>
+              )}
+              <p><strong>Niveau d'intérêt :</strong> {prospection.niveauInteret || 'Non évalué'}/5</p>
             </Col>
             <Col md={6}>
-              <p><strong>Date de création:</strong> {new Date(prospection.dateCreation).toLocaleDateString()}</p>
-              <p><strong>Dernière modification:</strong> {new Date(prospection.dateModification).toLocaleDateString()}</p>
-              <p><strong>Secteur:</strong> {prospection.secteur || 'Non renseigné'}</p>
+              <p><strong>Date de création :</strong> {new Date(prospection.dateCreation).toLocaleDateString('fr-FR')}</p>
+              <p><strong>Dernière modification :</strong> {new Date(prospection.dateModification).toLocaleDateString('fr-FR')}</p>
+              <p><strong>Créé par :</strong> {prospection.creePar?.prenom} {prospection.creePar?.nom}</p>
+              {prospection.modifiePar && (
+                <p><strong>Modifié par :</strong> {prospection.modifiePar?.prenom} {prospection.modifiePar?.nom}</p>
+              )}
             </Col>
           </Row>
 
-          <h5>Notes</h5>
-          <p>{prospection.notes || 'Aucune note.'}</p>
+          <h5>Commentaires</h5>
+          <p>{prospection.commentaires || 'Aucun commentaire.'}</p>
+
+          {prospection.resultatsVisite && (
+            <>
+              <h5>Résultats de la visite</h5>
+              <p>{prospection.resultatsVisite}</p>
+            </>
+          )}
+
+          {prospection.besoinsExprimes && (
+            <>
+              <h5>Besoins exprimés</h5>
+              <p>{prospection.besoinsExprimes}</p>
+            </>
+          )}
+
+          {prospection.actionsASuivre && (
+            <>
+              <h5>Actions à suivre</h5>
+              <p>{prospection.actionsASuivre}</p>
+            </>
+          )}
         </Card.Body>
         <Card.Footer>
           <h5 className="mb-3">Actions disponibles</h5>
@@ -136,13 +238,14 @@ const ProspectionDetail = () => {
                   variant="outline-primary"
                   size="sm"
                   onClick={() => handleTransitionClick(transition)}
+                  className="me-2 mb-2"
                 >
                   {transition.replace(/_/g, ' ')}
                 </Button>
               ))}
             </div>
           ) : (
-            <p className="text-muted">Aucune transition disponible.</p>
+            <p className="text-muted">Aucune transition disponible pour l'état actuel.</p>
           )}
         </Card.Footer>
       </Card>
@@ -153,18 +256,36 @@ const ProspectionDetail = () => {
           <Modal.Title>Confirmer le changement d'état</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Êtes-vous sûr de vouloir appliquer la transition <strong>{selectedTransition.replace(/_/g, ' ')}</strong> ?
+          Êtes-vous sûr de vouloir passer la fiche à l'état <strong>{selectedTransition.replace(/_/g, ' ')}</strong> ?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTransitionModal(false)}>
             Annuler
           </Button>
-          <Button variant="primary" onClick={applyTransition}>
-            Confirmer
+          <Button variant="primary" onClick={applyTransition} disabled={loading}>
+            {loading ? <Spinner animation="border" size="sm" /> : 'Confirmer'}
           </Button>
         </Modal.Footer>
       </Modal>
-    </div>
+
+      {/* Modal de confirmation de suppression */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmer la suppression</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Êtes-vous sûr de vouloir supprimer définitivement cette fiche ? Cette action est irréversible.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Annuler
+          </Button>
+          <Button variant="danger" onClick={handleDelete} disabled={loading}>
+            {loading ? <Spinner animation="border" size="sm" /> : 'Supprimer'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </Container>
   );
 };
 
